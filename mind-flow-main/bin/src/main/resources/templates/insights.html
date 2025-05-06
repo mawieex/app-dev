@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insights</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="design.css">
+</head>
+<body>
+    <div class="container-fluid">
+        <header class="text-center py-4">
+            <h1>Mood Tracker Dashboard</h1>
+        </header>
+       
+        <div class="row">
+            <!-- Sidebar Menu -->
+            <nav class="col-md-3 bg-light p-3">
+                <h4>Menu</h4>
+                <ul class="nav flex-column">
+                    <li class="nav-item"><a class="nav-link" href="journaling.html">Journaling</a></li>
+                    <li class="nav-item"><a class="nav-link" href="insights.html">Insights</a></li>
+                    <li class="nav-item"><a class="nav-link" href="profile.html">Profile</a></li>
+                    <li class="nav-item"><a class="nav-link" href="community.html">Community</a></li>
+                    <li class="nav-item"><a class="nav-link" href="security.html">Security</a></li>
+                </ul>
+            </nav>
+
+
+            <!-- Insights Section -->
+            <section id="insights" class="col-md-9 py-4">
+                <h2>Insights & Analytics</h2>
+                <div class="chart-container">
+                    <canvas id="moodChart"></canvas>
+                </div>
+                <div class="mt-4">
+                    <h5>Monthly Trends</h5>
+                    <p>Summary of mood fluctuations over time.</p>
+                    <h5>Activity Impact</h5>
+                    <p>Analyze how activities influence mental well-being.</p>
+                </div>
+            </section>
+        </div> <!-- End of Row -->
+    </div> <!-- End of Container -->
+
+
+    <!-- External Scripts -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.js" defer></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    <script src="script.js"></script>
+
+
+</body>
+</html>

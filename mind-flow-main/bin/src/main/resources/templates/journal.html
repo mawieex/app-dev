@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>Mood Tracker Dashboard</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="design.css">
+</head>
+<body>
+    <div class="container-fluid">
+        <header class="text-center py-4">
+            <h1>Welcome, <span id="userEmail">User</span>!</h1>
+            <a href="#" id="logoutButton" class="btn btn-danger">Logout</a>
+        </header>
+
+        <div class="row">
+            <nav class="col-md-3 bg-light p-3">
+                <h4>Menu</h4>
+                <ul class="nav flex-column">
+                    <li class="nav-item"><a class="nav-link" href="journaling.html">Journaling</a></li>
+                    <li class="nav-item"><a class="nav-link" href="insights.html">Insights</a></li>
+                    <li class="nav-item"><a class="nav-link" href="profile.html">Profile</a></li>
+                    <li class="nav-item"><a class="nav-link" href="community.html">Community</a></li>
+                    <li class="nav-item"><a class="nav-link" href="security.html">Security</a></li>
+                </ul>
+            </nav>
+
+            <main class="col-md-9">
+                <section id="journaling" class="py-4">
+                    <h2>Journal and Mood Tracking</h2>
+                    <form id="journalForm" action="/user/journal" method="post">
+			    <div class="form-group">
+			        <label for="journalEntry">New Journal Entry</label>
+			        <textarea class="form-control" id="journalEntry" name="journalEntry" rows="4" required></textarea>
+			    </div>
+			    <div class="form-group">
+			        <label for="moodSelect">Mood Selection</label>
+			        <select class="form-control" id="moodSelect" name="moodSelect" required>
+			            <option value="">Select Mood</option>
+			            <option value="Happy">Happy</option>
+			            <option value="Sad">Sad</option>
+			            <option value="Angry">Angry</option>
+			            <option value="Relaxed">Relaxed</option>
+			            <option value="Stressed">Stressed</option>
+			        </select>
+			    </div>
+			    <div class="form-group">
+			        <label for="tags">Add Tags</label>
+			        <input type="text" class="form-control" id="tags" name="tags" placeholder="Enter tags separated by commas">
+			    </div>
+			    <button type="submit" class="btn btn-primary">Save Entry</button>
+			</form>
+
+
+                    <div id="journalEntries" class="mt-4">
+                        <h5>Your Journal Entries</h5>
+                        <ul id="entryList" class="list-group"></ul>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="script.js"></script>
+
+    
+</body>
+</html>

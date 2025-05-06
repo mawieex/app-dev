@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head lang="en" xmlns:th="http://www.thymeleaf.org">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>MindFlow Insights</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" th:href="@{/insights.css}">
+    <!-- Load Chart.js with all required components -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+</head>
+<body>
+    <div class="container-fluid">
+        <header class="text-center py-4">
+            <h1>Your Mind's Insights</h1>
+            <p class="subtitle">Discover patterns and growth in your journey</p>
+        </header>
+
+        <div class="row">
+            <nav class="col-md-3">
+                <div class="nav-container">
+                    <h4>Menu</h4>
+                    <ul class="nav flex-column">
+                        <li class="nav-item"><a class="nav-link" th:href="@{/journal}">Journaling</a></li>
+                        <li class="nav-item"><a class="nav-link" th:href="@{/insights}">Insights</a></li>
+                        <li class="nav-item"><a class="nav-link" th:href="@{/community}">Community</a></li>
+                        <li class="nav-item"><a class="nav-link" th:href="@{/profile}">Profile</a></li>
+                    </ul>
+                </div>
+            </nav>
+
+            <main class="col-md-9">
+                <div class="journal-container">
+                    <h2>Your Insights and Analytics</h2>
+                    <div class="insights-content">
+                        <!-- Journal Streak Section -->
+                        <div class="streak-container">
+                            <h3>Journal Streak</h3>
+                            <div class="streak-display">
+                                <div class="streak-number" id="currentStreak">0</div>
+                                <div class="streak-label">Current Streak</div>
+                            </div>
+                            <div class="streak-progress">
+                                <div class="streak-progress-bar" id="streakProgress" style="width: 0%"></div>
+                            </div>
+                            <p class="streak-message">Keep up the good work!</p>
+                            <div class="streak-achievements">
+                                <div class="achievement">
+                                    <div class="achievement-number" id="totalEntries">0</div>
+                                    <div class="achievement-label">Total Entries</div>
+                                </div>
+                                <div class="achievement">
+                                    <div class="achievement-number" id="longestStreak">0</div>
+                                    <div class="achievement-label">Longest Streak</div>
+                                </div>
+                                <div class="achievement">
+                                    <div class="achievement-number" id="completionRate">0%</div>
+                                    <div class="achievement-label">Completion Rate</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mood Over Time Graph -->
+                        <div class="insight-card mb-4">
+                            <h3>Mood Over Time</h3>
+                            <div class="chart-container" style="position: relative; height: 400px; width: 100%;">
+                                <canvas id="moodChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Monthly Trends -->
+                        <div class="insight-card">
+                            <h3>Monthly Trends</h3>
+                            <div class="trends-container">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h4>Most Common Emotions</h4>
+                                        <canvas id="emotionsChart"></canvas>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h4>Activity Patterns</h4>
+                                        <canvas id="activitiesChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script th:src="@{/js/insights.js}" defer></script>
+</body>
+</html>

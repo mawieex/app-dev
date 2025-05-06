@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+   <meta charset="UTF-8">
+   <title>Register - MindFlow</title>
+   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+   <link rel="stylesheet" href="register.css">
+</head>
+<body>
+   <div class="container">
+       <h2>Create your Account</h2>
+       <form action="/user/save" method="post">
+   <input type="text" name="firstName" placeholder="First Name" class="input-field" required>
+   <input type="text" name="lastName" placeholder="Last Name" class="input-field" required>
+   <input type="text" name="username" placeholder="Username" class="input-field" required>
+   <input type="email" name="email" placeholder="Email Address" class="input-field" required>
+   <input type="password" name="password" placeholder="Password" class="input-field" required>
+   <input type="checkbox" class="checkbox" required> I agree to the Terms and Privacy Policy
+   <button type="submit" class="btn">Create Account</button>
+		</form>
+       <a href="/user/login" class="link">Already have an account? Login Here</a>
+   </div>
+</body>
+</html>

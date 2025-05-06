@@ -1,0 +1,57 @@
+body {
+    background-color: #ffffff;
+    color: #333;
+}
+
+
+header {
+    background-color: #e0e4ed;
+    color: #333;
+}
+
+
+nav {
+    background-color: #dfe3ed;
+}
+
+
+nav .nav-link {
+    color: #333;
+}
+
+
+nav .nav-link:hover {
+    background-color: #d1e1d4;
+}
+
+
+section {
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+
+h2 {
+    color: #333;
+}
+
+
+.chart-container {
+    position: relative;
+    height: 40vh;
+    width: 80vw;
+    margin: auto;
+}
+
+
+.btn-primary {
+    background-color: #d1e1d4;
+    border: none;
+}
+
+
+.btn-primary:hover {
+    background-color: #c0d4c1;
+}

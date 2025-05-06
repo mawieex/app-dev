@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head lang="en" xmlns:th="http://www.thymeleaf.org">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>MindFlow Journal</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" th:href="@{/journal.css}">
+</head>
+<body>
+    <div class="container-fluid">
+        <header class="text-center py-4">
+            <h1>Your Mind's Safe Space</h1>
+            <p class="subtitle">Where thoughts bloom and emotions flow freely</p>
+        </header>
+
+        <div class="row">
+            <nav class="col-md-3">
+                <div class="nav-container">
+                    <h4>Menu</h4>
+                    <ul class="nav flex-column">
+                        <li class="nav-item"><a class="nav-link" th:href="@{/journal}">Journaling</a></li>
+                        <li class="nav-item"><a class="nav-link" th:href="@{/insights}">Insights</a></li>
+                        <li class="nav-item"><a class="nav-link" th:href="@{/community}">Community</a></li>
+                        <li class="nav-item"><a class="nav-link" th:href="@{/profile}">Profile</a></li>
+                    </ul>
+                </div>
+            </nav>
+
+            <main class="col-md-9">
+                <div class="journal-container">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2>New Journal Entry</h2>
+                        <div id="streakDisplay" class="badge badge-primary p-2">Current Streak: 0 days</div>
+                    </div>
+                    <form id="journalForm" action="/user/journal" method="post">
+                        <div class="form-group">
+                            <label for="journalEntry">What's on your mind?</label>
+                            <textarea class="form-control" id="journalEntry" name="journalEntry" rows="4" required 
+                                    placeholder="Write your thoughts here..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="moodSelect">How are you feeling?</label>
+                            <select class="form-control" id="moodSelect" name="moodSelect" required>
+                                placeholder="Select your mood here"></textarea>
+                                <option value="Happy">Happy</option>
+                                <option value="Calm">Calm</option>
+                                <option value="Neutral">Neutral</option>
+                                <option value="Anxious">Anxious</option>
+                                <option value="Sad">Sad</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="tags">Tags</label>
+                            <input type="text" class="form-control" id="tags" name="tags" 
+                                   placeholder="Add tags separated by commas (e.g., work, family, goals)">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save Entry</button>
+                    </form>
+
+                    <div id="journalEntries" class="mt-5">
+                        <h2>Your Journal Entries</h2>
+                        <div id="entryList" class="entry-list"></div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script th:src="@{/js/journal.js}" defer></script>
+</body>
+</html>

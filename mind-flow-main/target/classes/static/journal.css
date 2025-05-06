@@ -1,0 +1,207 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --primary-green: #A8C3A6;
+    --darker-green: #023020;
+    --dark-green: #8BA889;
+    --light-green: #D1E1D4;
+    --lighter-green: #E8F0E6;
+    --text-dark: #2C3E50;
+}
+
+html, body {
+    width: 100%;
+    overflow-x: hidden; 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.container-fluid {
+    padding: 0; 
+}
+
+header {
+    background-color: var(--primary-green);
+    padding: 30px;
+    width: 100%;
+    max-width: 100%;
+    border-radius: 0;
+    margin: 0;
+    color: var(--text-dark);
+}
+
+header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    font-size: 1.2rem;
+    color: var(--text-dark);
+    opacity: 0.8;
+}
+
+body {
+    background-color: var(--light-green);
+    color: var(--text-dark);
+}
+
+nav {
+    background-color: var(--lighter-green);
+    padding: 20px;
+    height: 100%;
+    min-height: calc(100vh - 120px);
+    margin: 0;
+}
+
+.nav-container {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.nav-container h4 {
+    color: var(--dark-green);
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--light-green);
+}
+
+.nav-item {
+    margin-bottom: 10px;
+    border-radius: 5px;
+}
+
+.nav-link {
+    color: var(--primary-green) !important;
+    padding: 12px 15px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.nav-link:hover {
+    color: var(--dark-green) !important;
+    background-color: var(--lighter-green);
+}
+
+main {
+    background-color: white;
+    padding: 30px;
+    border-radius: 0px;
+    margin: 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    min-height: calc(100vh - 120px);
+}
+
+.journal-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.journal-container h2 {
+    color: var(--dark-green);
+    margin-bottom: 25px;
+}
+
+.form-group label {
+    color: var(--dark-green);
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.form-control {
+    border: 2px solid var(--light-green);
+    border-radius: 8px;
+    padding: 12px;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: var(--primary-green);
+    box-shadow: 0 0 0 0.2rem rgba(168, 195, 166, 0.25);
+}
+
+.btn-primary {
+    background-color: var(--primary-green);
+    border: none;
+    color: var(--text-dark);
+    padding: 12px 25px;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: var(--dark-green);
+    color: white;
+    transform: translateY(-1px);
+}
+
+.entry-list {
+    margin-top: 30px;
+}
+
+.entry-list h2 {
+    color: var(--dark-green);
+    margin-bottom: 20px;
+}
+
+/* Journal Entry Card Styles */
+.journal-entry {
+    background-color: var(--lighter-green);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-left: 4px solid var(--primary-green);
+}
+
+.journal-entry h3 {
+    color: var(--dark-green);
+    margin-bottom: 10px;
+}
+
+.journal-entry p {
+    color: var(--text-dark);
+    margin-bottom: 15px;
+}
+
+.journal-entry .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tag {
+    background-color: var(--primary-green);
+    color: var(--text-dark);
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 0.9rem;
+}
+
+.row {
+    margin: 0;
+    padding: 0;
+}
+
+/* Streak Badge Styles */
+#streakDisplay {
+    background-color: var(--darker-green);
+    color: white;
+    font-size: 1.1rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+#streakDisplay:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+

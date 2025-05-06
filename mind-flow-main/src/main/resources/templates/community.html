@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head lang="en" xmlns:th="http://www.thymeleaf.org">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>MindFlow Community</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" th:href="@{/design.css}">
+</head>
+<body>
+    <div class="container-fluid">
+        <header class="text-center py-4">
+            <h1>Community Support</h1>
+            <p class="subtitle">Connect and share with others on their journey</p>
+        </header>
+
+        <div class="row">
+            <nav class="col-md-3">
+                <div class="nav-container">
+                    <h4>Menu</h4>
+                    <ul class="nav flex-column">
+                        <li class="nav-item"><a class="nav-link" th:href="@{/journal}">Journaling</a></li>
+                        <li class="nav-item"><a class="nav-link" th:href="@{/insights}">Insights</a></li>
+                        <li class="nav-item"><a class="nav-link" th:href="@{/community}">Community</a></li>
+                        <li class="nav-item"><a class="nav-link" th:href="@{/profile}">Profile</a></li>
+                    </ul>
+                </div>
+            </nav>
+
+            <main class="col-md-9">
+                <div class="journal-container">
+                    <h2>Community Feed</h2>
+                    <div class="community-content">
+                        <!-- Community content will go here -->
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script th:src="@{/js/community.js}" defer></script>
+</body>
+</html>

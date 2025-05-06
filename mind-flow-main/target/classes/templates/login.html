@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head lang="en" xmlns:th="http://www.thymeleaf.org">
+<meta charset="UTF-8">
+<title>Login - MindFlow</title>
+<link rel="stylesheet" th:href="@{/login.css}">
+<!-- Add SweetAlert2 CSS and JS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+	<form action="/user/authenticate" method="post">
+		<label>Email:</label>
+		<input type="email" name="email"> <br>
+		<label>Password:</label>
+		<input type="password" name="password"> <br>
+		<button type="submit">Login</button>
+		<p><a href="/forgot-password" class="link">Forgot Password?</a></p>
+		<p>Don't have an account? <a href="/user/new" class="link">Register here</a></p>
+	</form>
+
+	<!-- Add script for popup messages -->
+	<script th:if="${message}" th:inline="javascript">
+		Swal.fire({
+			title: 'Success!',
+			text: /*[[${message}]]*/ '',
+			icon: 'success',
+			confirmButtonText: 'OK'
+		});
+	</script>
+	<script th:if="${error}" th:inline="javascript">
+		Swal.fire({
+			title: 'Error!',
+			text: /*[[${error}]]*/ '',
+			icon: 'error',
+			confirmButtonText: 'OK'
+		});
+	</script>
+</body>
+</html>
