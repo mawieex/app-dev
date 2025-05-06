@@ -103,8 +103,14 @@ function updateInsightsDisplay() {
 
 // Function to prepare mood data for chart
 function prepareMoodData() {
+    console.log('Preparing mood data...');
     const entries = JSON.parse(localStorage.getItem('journalEntries')) || [];
-    if (entries.length === 0) return { labels: [], data: [] };
+    console.log('Journal entries:', entries);
+    
+    if (entries.length === 0) {
+        console.log('No journal entries found');
+        return { labels: [], data: [] };
+    }
 
     // Sort entries by date
     entries.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
@@ -115,6 +121,7 @@ function prepareMoodData() {
     entries.forEach(entry => {
         const date = new Date(entry.timestamp).toLocaleDateString();
         const moodValue = getMoodValue(entry.mood);
+        console.log(`Processing entry - Date: ${date}, Mood: ${entry.mood}, Value: ${moodValue}`);
         
         if (!moodMap.has(date)) {
             moodMap.set(date, { sum: moodValue, count: 1 });
@@ -133,6 +140,7 @@ function prepareMoodData() {
         Math.round((day.sum / day.count) * 10) / 10
     );
 
+    console.log('Prepared chart data:', { labels, data });
     return { labels, data };
 }
 
@@ -150,90 +158,119 @@ function getMoodValue(mood) {
 
 // Function to update mood chart
 function updateMoodChart() {
+    console.log('Updating mood chart...');
+    
     const { labels, data } = prepareMoodData();
+    console.log('Chart data:', { labels, data });
     
     // Destroy existing chart if it exists
-    if (window.moodChart) {
+    if (window.moodChart instanceof Chart) {
+        console.log('Destroying existing chart');
         window.moodChart.destroy();
     }
 
-    const ctx = document.getElementById('moodChart');
-    if (!ctx) {
+    const canvas = document.getElementById('moodChart');
+    if (!canvas) {
         console.error('Mood chart canvas not found');
         return;
     }
+    console.log('Found canvas element');
 
     // Set canvas size
-    ctx.style.width = '100%';
-    ctx.style.height = '400px';
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
 
-    const chartContext = ctx.getContext('2d');
-    window.moodChart = new Chart(chartContext, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Mood Over Time',
-                data: data,
-                borderColor: '#4CAF50',
-                backgroundColor: 'rgba(76, 175, 80, 0.1)',
-                borderWidth: 2,
-                fill: true,
-                tension: 0.4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            layout: {
-                padding: {
-                    left: 10,
-                    right: 10,
-                    top: 10,
-                    bottom: 10
-                }
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        console.error('Could not get canvas context');
+        return;
+    }
+    console.log('Got canvas context');
+
+    try {
+        console.log('Creating new chart...');
+        // Create new chart instance
+        const chartConfig = {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Mood Over Time',
+                    data: data,
+                    borderColor: '#4CAF50',
+                    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
             },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 5,
-                    ticks: {
-                        stepSize: 1,
-                        callback: function(value) {
-                            const moodLabels = {
-                                1: 'Sad',
-                                2: 'Anxious',
-                                3: 'Neutral',
-                                4: 'Calm',
-                                5: 'Happy'
-                            };
-                            return moodLabels[value] || value;
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: {
+                    padding: {
+                        left: 10,
+                        right: 10,
+                        top: 10,
+                        bottom: 10
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 5,
+                        ticks: {
+                            stepSize: 1,
+                            callback: function(value) {
+                                const moodLabels = {
+                                    1: 'Sad',
+                                    2: 'Anxious',
+                                    3: 'Neutral',
+                                    4: 'Calm',
+                                    5: 'Happy'
+                                };
+                                return moodLabels[value] || value;
+                            }
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45
                         }
                     }
                 },
-                x: {
-                    ticks: {
-                        maxRotation: 45,
-                        minRotation: 45
-                    }
-                }
-            },
-            plugins: {
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return `Mood: ${context.raw}`;
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `Mood: ${context.raw}`;
+                            }
                         }
                     }
                 }
             }
-        }
-    });
+        };
+
+        // Create the chart and store it in window.moodChart
+        window.moodChart = new Chart(ctx, chartConfig);
+        console.log('Chart created successfully');
+    } catch (error) {
+        console.error('Error creating chart:', error);
+        // Clear the error state
+        window.moodChart = null;
+    }
 }
 
 // Initialize insights when page loads
 document.addEventListener("DOMContentLoaded", function () {
     console.log('DOM loaded, initializing insights...');
+    
+    // Make sure Chart.js is loaded
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js is not loaded');
+        return;
+    }
     
     // Update insights display
     updateInsightsDisplay();
@@ -242,7 +279,7 @@ document.addEventListener("DOMContentLoaded", function () {
     updateMoodChart();
     
     // Log chart status
-    console.log('Chart initialized:', window.moodChart ? 'success' : 'failed');
+    console.log('Chart initialized:', window.moodChart instanceof Chart ? 'success' : 'failed');
 });
 
 // Add event listener for storage changes to update chart

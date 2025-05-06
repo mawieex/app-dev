@@ -6,7 +6,6 @@
     <title>MindFlow Insights</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" th:href="@{/insights.css}">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="container-fluid">
@@ -62,8 +61,8 @@
                         <!-- Mood Over Time Graph -->
                         <div class="insight-card mb-4">
                             <h3>Mood Over Time</h3>
-                            <div class="chart-container" style="position: relative; height: 400px;">
-                                <canvas id="moodChart" style="width: 100%; height: 100%;"></canvas>
+                            <div class="chart-container" style="position: relative; height: 400px; width: 100%;">
+                                <canvas id="moodChart"></canvas>
                             </div>
                         </div>
 
@@ -89,8 +88,22 @@
         </div>
     </div>
 
+    <!-- Load dependencies in correct order -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    
+    <!-- Load Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+    <script>
+        // Verify Chart.js is loaded
+        if (typeof Chart === 'undefined') {
+            console.error('Chart.js failed to load');
+            document.getElementById('moodChart').innerHTML = '<div class="alert alert-danger">Failed to load chart library. Please refresh the page.</div>';
+        }
+    </script>
+    
+    <!-- Load our custom scripts last -->
     <script th:src="@{/js/insights.js}" defer></script>
 </body>
 </html>

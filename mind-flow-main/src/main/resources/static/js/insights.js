@@ -103,8 +103,18 @@ function updateInsightsDisplay() {
 
 // Function to prepare mood data for chart
 function prepareMoodData() {
+    console.log('Preparing mood data...');
     const entries = JSON.parse(localStorage.getItem('journalEntries')) || [];
-    if (entries.length === 0) return { labels: [], data: [] };
+    console.log('Journal entries:', entries);
+    
+    if (entries.length === 0) {
+        console.log('No journal entries found');
+        const canvas = document.getElementById('moodChart');
+        if (canvas) {
+            canvas.innerHTML = '<div class="alert alert-info">No journal entries found. Start journaling to see your mood trends!</div>';
+        }
+        return { labels: [], data: [] };
+    }
 
     // Sort entries by date
     entries.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
@@ -115,6 +125,7 @@ function prepareMoodData() {
     entries.forEach(entry => {
         const date = new Date(entry.timestamp).toLocaleDateString();
         const moodValue = getMoodValue(entry.mood);
+        console.log(`Processing entry - Date: ${date}, Mood: ${entry.mood}, Value: ${moodValue}`);
         
         if (!moodMap.has(date)) {
             moodMap.set(date, { sum: moodValue, count: 1 });
@@ -133,6 +144,7 @@ function prepareMoodData() {
         Math.round((day.sum / day.count) * 10) / 10
     );
 
+    console.log('Prepared chart data:', { labels, data });
     return { labels, data };
 }
 
@@ -155,9 +167,17 @@ function updateMoodChart() {
     const { labels, data } = prepareMoodData();
     console.log('Chart data:', { labels, data });
     
+    // If no data, don't try to create chart
+    if (labels.length === 0 || data.length === 0) {
+        console.log('No data to display in chart');
+        return;
+    }
+    
     // Destroy existing chart if it exists
-    if (window.moodChart) {
+    if (window.moodChart && typeof window.moodChart.destroy === 'function') {
+        console.log('Destroying existing chart');
         window.moodChart.destroy();
+        window.moodChart = null;
     }
 
     const canvas = document.getElementById('moodChart');
@@ -165,6 +185,7 @@ function updateMoodChart() {
         console.error('Mood chart canvas not found');
         return;
     }
+    console.log('Found canvas element');
 
     // Set canvas size
     canvas.style.width = '100%';
@@ -175,9 +196,12 @@ function updateMoodChart() {
         console.error('Could not get canvas context');
         return;
     }
+    console.log('Got canvas context');
 
     try {
-        window.moodChart = new Chart(ctx, {
+        console.log('Creating new chart...');
+        // Create new chart instance
+        const chartConfig = {
             type: 'line',
             data: {
                 labels: labels,
@@ -237,16 +261,51 @@ function updateMoodChart() {
                     }
                 }
             }
-        });
+        };
+
+        // Create the chart and store it in window.moodChart
+        window.moodChart = new Chart(ctx, chartConfig);
         console.log('Chart created successfully');
     } catch (error) {
         console.error('Error creating chart:', error);
+        // Show error message in canvas
+        canvas.innerHTML = '<div class="alert alert-danger">Error creating chart. Please try refreshing the page.</div>';
+        // Clear the error state
+        window.moodChart = null;
     }
 }
 
 // Initialize insights when page loads
 document.addEventListener("DOMContentLoaded", function () {
     console.log('DOM loaded, initializing insights...');
+    
+    // Check if Chart.js is loaded
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js is not loaded!');
+        const canvas = document.getElementById('moodChart');
+        if (canvas) {
+            canvas.innerHTML = `
+                <div class="alert alert-danger">
+                    <h4>Chart Library Not Found</h4>
+                    <p>The chart library (Chart.js) failed to load. This could be due to:</p>
+                    <ul>
+                        <li>No internet connection</li>
+                        <li>CDN access issues</li>
+                        <li>Script loading problems</li>
+                    </ul>
+                    <p>Please try:</p>
+                    <ol>
+                        <li>Refreshing the page</li>
+                        <li>Checking your internet connection</li>
+                        <li>If the problem persists, contact support</li>
+                    </ol>
+                </div>
+            `;
+        }
+        return;
+    }
+    
+    console.log('Chart.js is loaded successfully');
     
     // Update insights display
     updateInsightsDisplay();
