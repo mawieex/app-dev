@@ -41,7 +41,7 @@ public class UserController {
             return "redirect:/user/new"; 
         }
         
-        userService.registerUser(user); 
+        userService.registerUser(user, user.getPassword()); 
         redi.addFlashAttribute("message", "Registration successful! Please check your email to verify your account.");
         return "redirect:/user/login";
     }
@@ -52,21 +52,22 @@ public class UserController {
         return "login";
     }
 
-    @PostMapping("/user/authenticate") 
-    public String loginUser(@RequestParam("email") String email, 
-                            @RequestParam("password") String password, 
-                            RedirectAttributes redi) {
-        if (userService.authenticateUser(email, password)) {
-            return "redirect:/journal";
-        }
-        
-        Optional<User> userOpt = userService.findByEmail(email);
-        if (userOpt.isPresent() && !userOpt.get().isEmailVerified()) {
-            redi.addFlashAttribute("error", "Please verify your email before logging in. Check your inbox for the verification link.");
+    @PostMapping("/user/login")
+    public String loginUser(@RequestParam String email, @RequestParam String password, RedirectAttributes redi, Model model) {
+        // We'll need to implement or call an authentication method in UserService
+        // For now, let's assume userService.authenticateUser(email, password) returns a User object or null
+        User authenticatedUser = userService.authenticateUser(email, password); // This method needs to be implemented in UserService
+
+        if (authenticatedUser != null) {
+            // Successful login
+            // You might want to add the user to the session here
+            // model.addAttribute("currentUser", authenticatedUser); // Example
+            return "redirect:/journal"; // Redirect to a dashboard or home page
         } else {
+            // Failed login
             redi.addFlashAttribute("error", "Invalid email or password.");
+            return "redirect:/user/login";
         }
-        return "redirect:/user/login";
     }
 
     @GetMapping("/journal")

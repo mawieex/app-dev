@@ -109,6 +109,10 @@ function prepareMoodData() {
     
     if (entries.length === 0) {
         console.log('No journal entries found');
+        const canvas = document.getElementById('moodChart');
+        if (canvas) {
+            canvas.innerHTML = '<div class="alert alert-info">No journal entries found. Start journaling to see your mood trends!</div>';
+        }
         return { labels: [], data: [] };
     }
 
@@ -163,10 +167,17 @@ function updateMoodChart() {
     const { labels, data } = prepareMoodData();
     console.log('Chart data:', { labels, data });
     
+    // If no data, don't try to create chart
+    if (labels.length === 0 || data.length === 0) {
+        console.log('No data to display in chart');
+        return;
+    }
+    
     // Destroy existing chart if it exists
-    if (window.moodChart instanceof Chart) {
+    if (window.moodChart && typeof window.moodChart.destroy === 'function') {
         console.log('Destroying existing chart');
         window.moodChart.destroy();
+        window.moodChart = null;
     }
 
     const canvas = document.getElementById('moodChart');
@@ -257,6 +268,8 @@ function updateMoodChart() {
         console.log('Chart created successfully');
     } catch (error) {
         console.error('Error creating chart:', error);
+        // Show error message in canvas
+        canvas.innerHTML = '<div class="alert alert-danger">Error creating chart. Please try refreshing the page.</div>';
         // Clear the error state
         window.moodChart = null;
     }
@@ -266,11 +279,33 @@ function updateMoodChart() {
 document.addEventListener("DOMContentLoaded", function () {
     console.log('DOM loaded, initializing insights...');
     
-    // Make sure Chart.js is loaded
+    // Check if Chart.js is loaded
     if (typeof Chart === 'undefined') {
-        console.error('Chart.js is not loaded');
+        console.error('Chart.js is not loaded!');
+        const canvas = document.getElementById('moodChart');
+        if (canvas) {
+            canvas.innerHTML = `
+                <div class="alert alert-danger">
+                    <h4>Chart Library Not Found</h4>
+                    <p>The chart library (Chart.js) failed to load. This could be due to:</p>
+                    <ul>
+                        <li>No internet connection</li>
+                        <li>CDN access issues</li>
+                        <li>Script loading problems</li>
+                    </ul>
+                    <p>Please try:</p>
+                    <ol>
+                        <li>Refreshing the page</li>
+                        <li>Checking your internet connection</li>
+                        <li>If the problem persists, contact support</li>
+                    </ol>
+                </div>
+            `;
+        }
         return;
     }
+    
+    console.log('Chart.js is loaded successfully');
     
     // Update insights display
     updateInsightsDisplay();
@@ -279,7 +314,7 @@ document.addEventListener("DOMContentLoaded", function () {
     updateMoodChart();
     
     // Log chart status
-    console.log('Chart initialized:', window.moodChart instanceof Chart ? 'success' : 'failed');
+    console.log('Chart initialized:', window.moodChart ? 'success' : 'failed');
 });
 
 // Add event listener for storage changes to update chart

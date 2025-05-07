@@ -1,0 +1,5 @@
+<dependency>
+    <groupId>org.thymeleaf.extras</groupId>
+    <artifactId>thymeleaf-extras-springsecurity6</artifactId>
+    <!-- The version is typically managed by your Spring Boot parent POM -->
+</dependency> 

@@ -6,6 +6,10 @@
     <title>MindFlow Insights</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" th:href="@{/insights.css}">
+    <!-- Load jQuery first -->
+    <script th:src="@{/js/jquery-3.6.0.min.js}"></script>
+    <!-- Load Chart.js -->
+    <script th:src="@{/js/chart.min.js}"></script>
 </head>
 <body>
     <div class="container-fluid">
@@ -88,20 +92,9 @@
         </div>
     </div>
 
-    <!-- Load dependencies in correct order -->
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    
-    <!-- Load Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
-    <script>
-        // Verify Chart.js is loaded
-        if (typeof Chart === 'undefined') {
-            console.error('Chart.js failed to load');
-            document.getElementById('moodChart').innerHTML = '<div class="alert alert-danger">Failed to load chart library. Please refresh the page.</div>';
-        }
-    </script>
+    <!-- Load remaining dependencies -->
+    <script th:src="@{/js/popper.min.js}"></script>
+    <script th:src="@{/js/bootstrap.min.js}"></script>
     
     <!-- Load our custom scripts last -->
     <script th:src="@{/js/insights.js}" defer></script>

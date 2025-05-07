@@ -1,6 +1,9 @@
 package com.appdev.MindFlow.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.appdev.MindFlow.model.User;
@@ -11,18 +14,31 @@ import com.appdev.MindFlow.repository.VerificationTokenRepository;
 import java.util.Optional;
 import java.util.UUID;
 
-
 @Service
-public class UserService {
+public class UserService implements UserDetailsService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final VerificationTokenRepository verificationRepository;
+    private final EmailService emailService;
+    private final PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private VerificationTokenRepository verificationRepository;
+    public UserService(UserRepository userRepository, 
+                       VerificationTokenRepository verificationRepository, 
+                       EmailService emailService, 
+                       PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.verificationRepository = verificationRepository;
+        this.emailService = emailService;
+        this.passwordEncoder = passwordEncoder;
+    }
 
-    @Autowired
-    private EmailService emailService;
+    @Override
+    @Transactional(readOnly = true)
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+        return user;
+    }
 
     public Optional<User> findByEmail(String email) {
         return userRepository.findByEmail(email);
@@ -36,7 +52,7 @@ public class UserService {
             emailService.sendPasswordResetEmail(user.getEmail(), token);
             return "Password reset link sent to your email.";
         }
-        return "User  not found.";
+        return "User not found.";
     }
 
     @Transactional
@@ -50,16 +66,13 @@ public class UserService {
             VerificationToken verificationToken = verificationTokenOpt.get();
             User user = verificationToken.getUser();
 
-            // Check if the token is expired
             if (verificationToken.isExpired()) {
+                verificationRepository.delete(verificationToken);
                 return "Password reset token is expired. Please request a new one.";
             }
 
-            // Update user's password
-            user.setPassword(newPassword);
+            user.setPassword(passwordEncoder.encode(newPassword));
             userRepository.save(user);
-
-            // Delete the used token
             verificationRepository.delete(verificationToken);
 
             return "Password has been reset successfully!";
@@ -67,34 +80,33 @@ public class UserService {
         return "Invalid password reset token.";
     }
 
-    // New method to register a user and send a verification email
     @Transactional
-    public void registerUser (User user) {
-        user.setEmailVerified(false); // Set email as unverified by default
-        userRepository.save(user); // Save user details
-        String token = UUID.randomUUID().toString(); // Generate a unique token
-        VerificationToken verificationToken = new VerificationToken(token, user); // Create a new VerificationToken
-        verificationRepository.save(verificationToken); // Save the token to the database
-        emailService.sendVerificationEmail(user.getEmail(), token); // Send verification email with the token
+    public void registerUser(User user, String rawPassword) {
+        user.setPassword(passwordEncoder.encode(rawPassword));
+        user.setEmailVerified(false);
+        user.getRoles().clear();
+        user.addRole("ROLE_USER");
+        userRepository.save(user);
+        
+        String token = UUID.randomUUID().toString();
+        VerificationToken verificationToken = new VerificationToken(token, user);
+        verificationRepository.save(verificationToken);
+        emailService.sendVerificationEmail(user.getEmail(), token);
     }
 
-    // New method to verify the email using the token
     public String verifyEmail(String token) {
         Optional<VerificationToken> verificationTokenOpt = verificationRepository.findByToken(token);
         if (verificationTokenOpt.isPresent()) {
             VerificationToken verificationToken = verificationTokenOpt.get();
-            User user = verificationToken.getUser ();
+            User user = verificationToken.getUser();
 
-            // Check if the token is expired
             if (verificationToken.isExpired()) {
+                verificationRepository.delete(verificationToken);
                 return "Verification token is expired.";
             }
-
-            // Update user's email verification status
+            
             user.setEmailVerified(true);
-            userRepository.save(user); // Save the updated user
-
-            // Optionally, delete the token after successful verification
+            userRepository.save(user);
             verificationRepository.delete(verificationToken);
 
             return "Email verified successfully!";
@@ -102,15 +114,14 @@ public class UserService {
         return "Invalid verification token.";
     }
 
-    public boolean authenticateUser(String email, String password) {
-        Optional<User> userOpt = findByEmail(email);
+    public User authenticateUser(String email, String password) {
+        Optional<User> userOpt = userRepository.findByEmail(email);
         if (userOpt.isPresent()) {
             User user = userOpt.get();
-            if (!user.isEmailVerified()) {
-                return false;
+            if (passwordEncoder.matches(password, user.getPassword()) && user.isEmailVerified()) {
+                return user;
             }
-            return user.getPassword().equals(password);
         }
-        return false;
+        return null;
     }
 }

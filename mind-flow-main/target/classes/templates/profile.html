@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html>
-<head lang="en" xmlns:th="http://www.thymeleaf.org">
+<head lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">  
     <title>MindFlow Profile</title>
@@ -23,6 +23,12 @@
                         <li class="nav-item"><a class="nav-link" th:href="@{/insights}">Insights</a></li>
                         <li class="nav-item"><a class="nav-link" th:href="@{/community}">Community</a></li>
                         <li class="nav-item"><a class="nav-link" th:href="@{/profile}">Profile</a></li>
+                        <!-- Logout Form -->
+                        <li class="nav-item" sec:authorize="isAuthenticated()">
+                            <form th:action="@{/perform_logout}" method="post" style="display: inline;">
+                                <button type="submit" class="nav-link btn btn-link" style="padding-left: 0; color: #007bff; text-decoration: none;">Logout</button>
+                            </form>
+                        </li>
                     </ul>
                 </div>
             </nav>
@@ -32,6 +38,9 @@
                     <h2>Account Settings</h2>
                     <div class="profile-content">
                         <!-- Profile content will go here -->
+                         <p sec:authorize="isAuthenticated()">
+                            Logged in as: <span sec:authentication="name"></span>
+                        </p>
                     </div>
                 </div>
             </main>
