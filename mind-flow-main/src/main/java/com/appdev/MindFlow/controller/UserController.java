@@ -13,6 +13,9 @@ import com.appdev.MindFlow.model.VerificationToken;
 import com.appdev.MindFlow.repository.VerificationTokenRepository;
 import com.appdev.MindFlow.service.UserService;
 
+import java.security.Principal;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+
 import java.util.Optional;
 
 @Controller
@@ -32,6 +35,10 @@ public class UserController {
 
     @PostMapping("/user/save")
     public String saveUserForm(User user, RedirectAttributes redi) {
+        if (user.getUsername() == null || user.getUsername().trim().isEmpty()) {
+            redi.addFlashAttribute("error", "Username is required!");
+            return "redirect:/user/new";
+        }
         if (user.getEmail() == null || user.getEmail().trim().isEmpty()) {
             redi.addFlashAttribute("error", "Email is required!");
             return "redirect:/user/new"; 
@@ -71,7 +78,21 @@ public class UserController {
     }
 
     @GetMapping("/journal")
-    public String showJournalPage() {
+    public String showJournalPage(Model model, Principal principal, @AuthenticationPrincipal User currentUser) {
+        if (currentUser != null) {
+            model.addAttribute("greetingUsername", currentUser.getActualUsername());
+        } else if (principal != null && principal instanceof User) {
+            // Fallback if @AuthenticationPrincipal didn't inject User directly, though less common with UserDetails
+            model.addAttribute("greetingUsername", ((User)principal).getActualUsername());
+        } else if (principal != null) {
+            // If principal is available but not directly a User instance, 
+            // you might need to fetch the User object using principal.getName() (which is email)
+            // User userFromDb = userService.findByEmail(principal.getName()).orElse(null);
+            // if (userFromDb != null) {
+            //     model.addAttribute("greetingUsername", userFromDb.getActualUsername());
+            // }
+            // For now, let's assume @AuthenticationPrincipal User currentUser works primarily
+        }
         return "journal";
     }
   

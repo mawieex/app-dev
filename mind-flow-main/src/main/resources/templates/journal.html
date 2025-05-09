@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head lang="en" xmlns:th="http://www.thymeleaf.org">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">  
@@ -28,6 +28,9 @@
             </nav>
 
             <main class="col-md-9">
+                <p class="lead" th:if="${greetingUsername}">
+                    Hello, <span th:text="${greetingUsername}">User</span>!
+                </p>
                 <div class="journal-container">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h2>New Journal Entry</h2>

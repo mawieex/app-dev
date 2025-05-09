@@ -30,6 +30,20 @@
             <main class="col-md-9">
                 <div class="journal-container">
                     <h2>Community Feed</h2>
+
+                    <!-- What's on your mind section -->
+                    <div class="whats-on-your-mind mb-4">
+                        <h4>What's on your mind?</h4>
+                        <form th:action="@{/community/post}" method="post">
+                            <!-- CSRF Token -->
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                            <div class="form-group">
+                                <textarea class="form-control" name="postContent" rows="3" placeholder="Share your thoughts..."></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Post</button>
+                        </form>
+                    </div>
+
                     <div class="community-content">
                         <!-- Community content will go here -->
                     </div>

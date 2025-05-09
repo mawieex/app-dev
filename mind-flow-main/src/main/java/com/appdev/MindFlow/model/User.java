@@ -24,6 +24,10 @@ public class User implements UserDetails { // Implement UserDetails
     @Email // Validate that the email is in the correct format
     private String email;
 
+    @Column(nullable = false, unique = true, length = 45) // Added username field
+    @NotBlank // Ensure username is not blank
+    private String username;
+
     @Column(nullable = false, length = 64) // Increased length for hashed password
     @NotBlank // Ensure that the password is not blank
     private String password;
@@ -50,6 +54,14 @@ public class User implements UserDetails { // Implement UserDetails
         this.email = email;
     }
 
+    public String getActualUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
     // UserDetails methods
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -68,7 +80,7 @@ public class User implements UserDetails { // Implement UserDetails
 
     @Override
     public String getUsername() {
-        return email; // Use email as username
+        return email;
     }
 
     @Override
@@ -116,9 +128,10 @@ public class User implements UserDetails { // Implement UserDetails
 
     @Override
     public String toString() {
-        return "User  {" +
+        return "User{" +
                 "id=" + id +
                 ", email='" + email + '\'' +
+                ", username='" + username + '\'' +
                 ", emailVerified=" + emailVerified +
                 ", roles=" + roles +
                 '}';
