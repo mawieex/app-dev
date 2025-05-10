@@ -21,7 +21,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**", "/*.css").permitAll() // Static resources
+                .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**", "/*.css", "/uploads/**").permitAll() // Static resources
                 .requestMatchers("/", "/home", "/user/new", "/user/save", "/user/login", "/forgot-password", "/user/forgot-password", "/user/reset-password", "/verify-email", "/error").permitAll() // Public pages
                 .requestMatchers("/user/verify", "/user/resend-verification").permitAll() // Email verification links
                 .anyRequest().authenticated() // All other requests need authentication

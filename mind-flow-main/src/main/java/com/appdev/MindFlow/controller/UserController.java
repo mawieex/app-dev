@@ -1,12 +1,18 @@
 package com.appdev.MindFlow.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.multipart.MultipartFile;
+import jakarta.servlet.http.HttpServletRequest;
 
 import com.appdev.MindFlow.model.User;
 import com.appdev.MindFlow.model.VerificationToken;
@@ -17,6 +23,10 @@ import java.security.Principal;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 import java.util.Optional;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 
 @Controller
 public class UserController {
@@ -61,20 +71,19 @@ public class UserController {
 
     @PostMapping("/user/login")
     public String loginUser(@RequestParam String email, @RequestParam String password, RedirectAttributes redi, Model model) {
-        // We'll need to implement or call an authentication method in UserService
-        // For now, let's assume userService.authenticateUser(email, password) returns a User object or null
-        User authenticatedUser = userService.authenticateUser(email, password); // This method needs to be implemented in UserService
-
+        System.out.println("\n=== Login Debug ===");
+        System.out.println("Attempting login for email: " + email);
+        
+        User authenticatedUser = userService.authenticateUser(email, password);
         if (authenticatedUser != null) {
-            // Successful login
-            // You might want to add the user to the session here
-            // model.addAttribute("currentUser", authenticatedUser); // Example
-            return "redirect:/journal"; // Redirect to a dashboard or home page
-        } else {
-            // Failed login
-            redi.addFlashAttribute("error", "Invalid email or password.");
-            return "redirect:/user/login";
+            System.out.println("Login successful for user: " + authenticatedUser.getActualUsername());
+            System.out.println("User email: " + authenticatedUser.getEmail());
+            System.out.println("Profile picture path: " + authenticatedUser.getProfilePicturePath());
+            return "redirect:/journal";
         }
+        System.out.println("Login failed for email: " + email);
+        redi.addFlashAttribute("error", "Invalid email or password.");
+        return "redirect:/user/login";
     }
 
     @GetMapping("/journal")
@@ -82,16 +91,7 @@ public class UserController {
         if (currentUser != null) {
             model.addAttribute("greetingUsername", currentUser.getActualUsername());
         } else if (principal != null && principal instanceof User) {
-            // Fallback if @AuthenticationPrincipal didn't inject User directly, though less common with UserDetails
             model.addAttribute("greetingUsername", ((User)principal).getActualUsername());
-        } else if (principal != null) {
-            // If principal is available but not directly a User instance, 
-            // you might need to fetch the User object using principal.getName() (which is email)
-            // User userFromDb = userService.findByEmail(principal.getName()).orElse(null);
-            // if (userFromDb != null) {
-            //     model.addAttribute("greetingUsername", userFromDb.getActualUsername());
-            // }
-            // For now, let's assume @AuthenticationPrincipal User currentUser works primarily
         }
         return "journal";
     }
@@ -106,9 +106,16 @@ public class UserController {
           return "community";
     }
     
-     @GetMapping("/profile")
-     public String showProfile() {
-          return "profile";
+    @GetMapping("/profile")
+    public String showProfile(Model model, @AuthenticationPrincipal User currentUser) {
+        System.out.println("\n=== Profile Page Debug ===");
+        System.out.println("Current User: " + (currentUser != null ? "exists" : "null"));
+        if (currentUser != null) {
+            System.out.println("Username: " + currentUser.getActualUsername());
+            System.out.println("Profile Picture Path: " + currentUser.getProfilePicturePath());
+        }
+        model.addAttribute("currentUser", currentUser);
+        return "profile";
     }
     
 
@@ -147,21 +154,20 @@ public class UserController {
             return "redirect:/user/login";
         }
         model.addAttribute("token", token);
-        return "reset-password"; 
+        return "reset-password";
     }
     
     @PostMapping("/user/reset-password")
     public String resetPassword(@RequestParam("token") String token, 
-                                @RequestParam("newPassword") String newPassword, 
-                                RedirectAttributes redi) {
+                              @RequestParam("newPassword") String newPassword, 
+                              RedirectAttributes redi) {
         String result = userService.resetPassword(token, newPassword);
         if (result.contains("successfully")) {
             redi.addFlashAttribute("message", "Password reset successful! Please log in.");
-            return "redirect:/user/login";
         } else {
             redi.addFlashAttribute("error", result);
-            return "redirect:/user/login";
         }
+        return "redirect:/user/login";
     }
     
     @GetMapping("/verify-email")
@@ -169,11 +175,119 @@ public class UserController {
         String result = userService.verifyEmail(token);
         if (result.contains("successfully")) {
             model.addAttribute("message", "Email verified successfully! You can now log in.");
-            return "login";
         } else {
             model.addAttribute("error", result);
-            return "login";
         }
+        return "login";
+    }
+    
+    @GetMapping("/user/edit-profile-picture")
+    public String showEditProfilePicturePage(Model model, @AuthenticationPrincipal User currentUser) {
+        model.addAttribute("currentUser", currentUser); // Pass current user to display existing pic path if any
+        return "edit-profile-picture";
+    }
+
+    @PostMapping("/user/upload-profile-picture")
+    public String uploadProfilePicture(@RequestParam("file") MultipartFile file, 
+                                     @AuthenticationPrincipal User currentUser, 
+                                     RedirectAttributes redirectAttributes) {
+        if (currentUser == null) {
+            redirectAttributes.addFlashAttribute("error", "You must be logged in to upload a profile picture.");
+            return "redirect:/user/login";
+        }
+        
+        System.out.println("\n=== Upload Profile Picture Debug ===");
+        System.out.println("Current User: " + (currentUser != null ? "exists" : "null"));
+        if (currentUser != null) {
+            System.out.println("Username: " + currentUser.getActualUsername());
+            System.out.println("Email: " + currentUser.getEmail());
+        }
+        System.out.println("Original filename: " + file.getOriginalFilename());
+        System.out.println("File size: " + file.getSize() + " bytes");
+        
+        if (file.isEmpty()) {
+            System.out.println("ERROR: No file selected");
+            redirectAttributes.addFlashAttribute("error", "Please select a file to upload.");
+            return "redirect:/user/edit-profile-picture";
+        }
+
+        try {
+            String uploadDir = "uploads/user-profile-pictures/" + currentUser.getActualUsername();
+            Path uploadDirPath = Paths.get(uploadDir);
+            System.out.println("Creating directory at: " + uploadDirPath.toAbsolutePath());
+            
+            if (!Files.exists(uploadDirPath)) {
+                Files.createDirectories(uploadDirPath);
+                System.out.println("Directory created successfully");
+            }
+
+            String originalFilename = file.getOriginalFilename();
+            if (originalFilename == null) {
+                System.out.println("ERROR: Original filename is null");
+                redirectAttributes.addFlashAttribute("error", "Invalid file name.");
+                return "redirect:/user/edit-profile-picture";
+            }
+
+            String fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            String filename = System.currentTimeMillis() + fileExtension;
+            Path filePath = uploadDirPath.resolve(filename);
+            System.out.println("Saving file to: " + filePath.toAbsolutePath());
+
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+            System.out.println("File saved successfully");
+            System.out.println("File exists after save: " + Files.exists(filePath));
+            System.out.println("File size after save: " + Files.size(filePath) + " bytes");
+
+            String relativePath = "/uploads/user-profile-pictures/" + currentUser.getActualUsername() + "/" + filename;
+            System.out.println("Updating user profile with path: " + relativePath);
+            userService.updateProfilePicturePath(currentUser.getActualUsername(), relativePath);
+            
+            System.out.println("Profile picture path updated in database");
+            redirectAttributes.addFlashAttribute("message", "Profile picture uploaded successfully!");
+        } catch (Exception e) {
+            System.out.println("ERROR: Exception during upload: " + e.getMessage());
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("error", "Could not upload profile picture: " + e.getMessage());
+        }
+
+        return "redirect:/profile";
+    }
+    
+    @GetMapping("/uploads/**")
+    public ResponseEntity<Resource> serveFile(HttpServletRequest request) {
+        System.out.println("\n=== Serve File Debug ===");
+        try {
+            String filename = request.getRequestURI().split("/uploads/")[1];
+            Path file = Paths.get("uploads", filename);
+            System.out.println("Requested URI: " + request.getRequestURI());
+            System.out.println("Looking for file at: " + file.toAbsolutePath());
+            System.out.println("File exists? " + Files.exists(file));
+            System.out.println("File is readable? " + Files.isReadable(file));
+            
+            Resource resource = new FileSystemResource(file.toFile());
+            if (resource.exists() && resource.isReadable()) {
+                String contentType = "image/jpeg"; // default
+                String filenameLower = filename.toLowerCase();
+                if (filenameLower.endsWith(".png")) {
+                    contentType = "image/png";
+                } else if (filenameLower.endsWith(".gif")) {
+                    contentType = "image/gif";
+                } else if (filenameLower.endsWith(".jpg") || filenameLower.endsWith(".jpeg")) {
+                    contentType = "image/jpeg";
+                }
+                
+                System.out.println("Serving file with content type: " + contentType);
+                return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header("Cache-Control", "no-cache")
+                    .body(resource);
+            }
+            System.out.println("File not found or not readable");
+        } catch (Exception e) {
+            System.out.println("Error serving file: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return ResponseEntity.notFound().build();
     }
     
 }

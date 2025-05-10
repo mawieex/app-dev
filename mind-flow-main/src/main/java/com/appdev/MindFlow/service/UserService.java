@@ -44,6 +44,18 @@ public class UserService implements UserDetailsService {
         return userRepository.findByEmail(email);
     }
 
+    public Optional<User> findByActualUsername(String username) {
+        return userRepository.findByUsername(username);
+    }
+
+    @Transactional
+    public void updateProfilePicturePath(String username, String filePath) {
+        User user = findByActualUsername(username)
+            .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
+        user.setProfilePicturePath(filePath);
+        userRepository.save(user);
+    }
+
     public String generatePasswordResetToken(User user) {
         if (user != null) {
             String token = UUID.randomUUID().toString();

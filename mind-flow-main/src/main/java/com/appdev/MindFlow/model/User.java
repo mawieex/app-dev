@@ -34,6 +34,9 @@ public class User implements UserDetails { // Implement UserDetails
 
     private boolean emailVerified = false;
 
+    @Column(length = 255) // To store the path to the profile picture
+    private String profilePicturePath;
+
     // For roles - simple approach using a Set of Strings
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
@@ -60,6 +63,14 @@ public class User implements UserDetails { // Implement UserDetails
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public String getProfilePicturePath() {
+        return profilePicturePath;
+    }
+
+    public void setProfilePicturePath(String profilePicturePath) {
+        this.profilePicturePath = profilePicturePath;
     }
 
     // UserDetails methods
@@ -133,6 +144,7 @@ public class User implements UserDetails { // Implement UserDetails
                 ", email='" + email + '\'' +
                 ", username='" + username + '\'' +
                 ", emailVerified=" + emailVerified +
+                ", profilePicturePath='" + profilePicturePath + '\'' +
                 ", roles=" + roles +
                 '}';
     }
