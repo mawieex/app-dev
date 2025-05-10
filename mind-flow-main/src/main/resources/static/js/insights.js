@@ -275,7 +275,210 @@ function updateMoodChart() {
     }
 }
 
-// Initialize insights when page loads
+// Function to prepare monthly emotions data
+function prepareMonthlyEmotionsData() {
+    console.log('Preparing monthly emotions data...');
+    const entries = JSON.parse(localStorage.getItem('journalEntries')) || [];
+    console.log('Total entries:', entries.length);
+    
+    if (entries.length === 0) {
+        console.log('No journal entries found for emotions chart');
+        return { labels: [], data: [] };
+    }
+
+    // Get current month's entries
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    console.log('Current month:', currentMonth, 'Current year:', currentYear);
+    
+    const monthlyEntries = entries.filter(entry => {
+        const entryDate = new Date(entry.timestamp);
+        return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
+    });
+    console.log('Monthly entries:', monthlyEntries.length);
+
+    // Count emotions
+    const emotionCounts = {
+        'Happy': 0,
+        'Calm': 0,
+        'Neutral': 0,
+        'Anxious': 0,
+        'Sad': 0
+    };
+
+    monthlyEntries.forEach(entry => {
+        console.log('Processing entry:', entry);
+        if (emotionCounts.hasOwnProperty(entry.mood)) {
+            emotionCounts[entry.mood]++;
+        }
+    });
+
+    console.log('Emotion counts:', emotionCounts);
+    return {
+        labels: Object.keys(emotionCounts),
+        data: Object.values(emotionCounts)
+    };
+}
+
+// Function to prepare activity patterns data
+function prepareActivityPatternsData() {
+    console.log('Preparing activity patterns data...');
+    const entries = JSON.parse(localStorage.getItem('journalEntries')) || [];
+    console.log('Total entries:', entries.length);
+    
+    if (entries.length === 0) {
+        console.log('No journal entries found for activity patterns chart');
+        return { labels: [], data: [] };
+    }
+
+    // Get current month's entries
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    console.log('Current month:', currentMonth, 'Current year:', currentYear);
+    
+    const monthlyEntries = entries.filter(entry => {
+        const entryDate = new Date(entry.timestamp);
+        return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
+    });
+    console.log('Monthly entries:', monthlyEntries.length);
+
+    // Count entries by day of week
+    const dayCounts = {
+        'Sunday': 0,
+        'Monday': 0,
+        'Tuesday': 0,
+        'Wednesday': 0,
+        'Thursday': 0,
+        'Friday': 0,
+        'Saturday': 0
+    };
+
+    monthlyEntries.forEach(entry => {
+        const day = new Date(entry.timestamp).toLocaleDateString('en-US', { weekday: 'long' });
+        console.log('Entry day:', day);
+        dayCounts[day]++;
+    });
+
+    console.log('Day counts:', dayCounts);
+    return {
+        labels: Object.keys(dayCounts),
+        data: Object.values(dayCounts)
+    };
+}
+
+// Function to update monthly trends charts
+function updateMonthlyTrendsCharts() {
+    console.log('Updating monthly trends charts...');
+    
+    // Update Emotions Chart
+    const emotionsData = prepareMonthlyEmotionsData();
+    console.log('Emotions data:', emotionsData);
+    
+    const emotionsCtx = document.getElementById('emotionsChart');
+    console.log('Emotions canvas context:', emotionsCtx);
+    
+    if (emotionsCtx) {
+        // Destroy existing chart if it exists and is a valid Chart instance
+        if (window.emotionsChart && typeof window.emotionsChart.destroy === 'function') {
+            console.log('Destroying existing emotions chart');
+            window.emotionsChart.destroy();
+        }
+        
+        try {
+            console.log('Creating new emotions chart...');
+            window.emotionsChart = new Chart(emotionsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: emotionsData.labels,
+                    datasets: [{
+                        data: emotionsData.data,
+                        backgroundColor: [
+                            '#4CAF50', // Happy - Green
+                            '#2196F3', // Calm - Blue
+                            '#9E9E9E', // Neutral - Grey
+                            '#FFC107', // Anxious - Yellow
+                            '#F44336'  // Sad - Red
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Emotional Distribution'
+                        }
+                    }
+                }
+            });
+            console.log('Emotions chart created successfully');
+        } catch (error) {
+            console.error('Error creating emotions chart:', error);
+        }
+    }
+
+    // Update Activity Patterns Chart
+    const activityData = prepareActivityPatternsData();
+    console.log('Activity data:', activityData);
+    
+    const activityCtx = document.getElementById('activitiesChart');
+    console.log('Activity canvas context:', activityCtx);
+    
+    if (activityCtx) {
+        // Destroy existing chart if it exists and is a valid Chart instance
+        if (window.activityChart && typeof window.activityChart.destroy === 'function') {
+            console.log('Destroying existing activity chart');
+            window.activityChart.destroy();
+        }
+        
+        try {
+            console.log('Creating new activity chart...');
+            window.activityChart = new Chart(activityCtx, {
+                type: 'bar',
+                data: {
+                    labels: activityData.labels,
+                    datasets: [{
+                        label: 'Journal Entries',
+                        data: activityData.data,
+                        backgroundColor: '#4CAF50',
+                        borderColor: '#388E3C',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Entries by Day of Week'
+                        }
+                    }
+                }
+            });
+            console.log('Activity chart created successfully');
+        } catch (error) {
+            console.error('Error creating activity chart:', error);
+        }
+    }
+}
+
+// Update the DOMContentLoaded event listener
 document.addEventListener("DOMContentLoaded", function () {
     console.log('DOM loaded, initializing insights...');
     
@@ -313,15 +516,23 @@ document.addEventListener("DOMContentLoaded", function () {
     // Update mood chart
     updateMoodChart();
     
+    // Update monthly trends charts
+    updateMonthlyTrendsCharts();
+    
     // Log chart status
-    console.log('Chart initialized:', window.moodChart ? 'success' : 'failed');
+    console.log('Charts initialized:', {
+        moodChart: window.moodChart ? 'success' : 'failed',
+        emotionsChart: window.emotionsChart ? 'success' : 'failed',
+        activityChart: window.activityChart ? 'success' : 'failed'
+    });
 });
 
-// Add event listener for storage changes to update chart
+// Update the storage event listener to include monthly trends
 window.addEventListener('storage', function(e) {
     if (e.key === 'journalEntries') {
-        console.log('Journal entries updated, refreshing chart...');
+        console.log('Journal entries updated, refreshing charts...');
         updateMoodChart();
+        updateMonthlyTrendsCharts();
     }
 });
 

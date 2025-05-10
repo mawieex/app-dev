@@ -7,7 +7,11 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" th:href="@{/insights.css}">
     <!-- Load jQuery first -->
-    <script th:src="@{/js/jquery-3.6.0.min.js}"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Load Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <!-- Load Bootstrap -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <!-- Load Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -77,11 +81,15 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <h4>Most Common Emotions</h4>
-                                        <canvas id="emotionsChart"></canvas>
+                                        <div class="chart-container" style="position: relative; height: 300px; width: 100%;">
+                                            <canvas id="emotionsChart"></canvas>
+                                        </div>
                                     </div>
                                     <div class="col-md-6">
                                         <h4>Activity Patterns</h4>
-                                        <canvas id="activitiesChart"></canvas>
+                                        <div class="chart-container" style="position: relative; height: 300px; width: 100%;">
+                                            <canvas id="activitiesChart"></canvas>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
