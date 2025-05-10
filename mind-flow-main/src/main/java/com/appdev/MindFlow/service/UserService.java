@@ -45,7 +45,7 @@ public class UserService implements UserDetailsService {
     }
 
     public Optional<User> findByActualUsername(String username) {
-        return userRepository.findByUsername(username);
+        return userRepository.findByActualUsername(username);
     }
 
     @Transactional

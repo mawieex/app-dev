@@ -11,6 +11,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
@@ -24,18 +25,23 @@ public class User implements UserDetails { // Implement UserDetails
     @Email // Validate that the email is in the correct format
     private String email;
 
-    @Column(nullable = false, unique = true, length = 45) // Added username field
-    @NotBlank // Ensure username is not blank
-    private String username;
-
     @Column(nullable = false, length = 64) // Increased length for hashed password
     @NotBlank // Ensure that the password is not blank
     private String password;
 
-    private boolean emailVerified = false;
+    @Column(name = "actual_username")
+    private String actualUsername;
 
-    @Column(length = 255) // To store the path to the profile picture
+    @Column(name = "profile_picture_path")
     private String profilePicturePath;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    private boolean emailVerified = false;
 
     // For roles - simple approach using a Set of Strings
     @ElementCollection(fetch = FetchType.EAGER)
@@ -58,11 +64,11 @@ public class User implements UserDetails { // Implement UserDetails
     }
 
     public String getActualUsername() {
-        return username;
+        return actualUsername;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    public void setActualUsername(String actualUsername) {
+        this.actualUsername = actualUsername;
     }
 
     public String getProfilePicturePath() {
@@ -71,6 +77,22 @@ public class User implements UserDetails { // Implement UserDetails
 
     public void setProfilePicturePath(String profilePicturePath) {
         this.profilePicturePath = profilePicturePath;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 
     // UserDetails methods
@@ -142,10 +164,20 @@ public class User implements UserDetails { // Implement UserDetails
         return "User{" +
                 "id=" + id +
                 ", email='" + email + '\'' +
-                ", username='" + username + '\'' +
                 ", emailVerified=" + emailVerified +
                 ", profilePicturePath='" + profilePicturePath + '\'' +
                 ", roles=" + roles +
                 '}';
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 }

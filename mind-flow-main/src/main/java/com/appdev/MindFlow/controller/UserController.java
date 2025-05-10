@@ -23,9 +23,11 @@ import com.appdev.MindFlow.model.Post;
 import com.appdev.MindFlow.repository.PostRepository;
 import com.appdev.MindFlow.model.Comment;
 import com.appdev.MindFlow.repository.CommentRepository;
+import com.appdev.MindFlow.repository.UserRepository;
 
 import java.security.Principal;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Optional;
 import java.nio.file.Path;
@@ -47,6 +49,9 @@ public class UserController {
     
     @Autowired
     private CommentRepository commentRepository;
+    
+    @Autowired
+    private UserRepository userRepository;
     
     @GetMapping("/user/new")
     public String showUserPage(Model model) {
@@ -99,9 +104,13 @@ public class UserController {
 
     @GetMapping("/journal")
     public String showJournalPage(Model model, Principal principal, @AuthenticationPrincipal User currentUser) {
+        System.out.println("\n=== Journal Page Debug ===");
+        System.out.println("Current User: " + (currentUser != null ? "exists" : "null"));
         if (currentUser != null) {
+            System.out.println("Username: " + currentUser.getActualUsername());
             model.addAttribute("greetingUsername", currentUser.getActualUsername());
         } else if (principal != null && principal instanceof User) {
+            System.out.println("Username from Principal: " + ((User)principal).getActualUsername());
             model.addAttribute("greetingUsername", ((User)principal).getActualUsername());
         }
         return "journal";
@@ -356,6 +365,31 @@ public class UserController {
         
         redirectAttributes.addFlashAttribute("message", "Comment added successfully!");
         return "redirect:/community";
+    }
+    
+    @PostMapping("/user/update-username")
+    public String updateUsername(@RequestParam String newUsername, 
+                               @AuthenticationPrincipal UserDetails userDetails,
+                               RedirectAttributes redirectAttributes) {
+        try {
+            User currentUser = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            // Check if username is already taken
+            if (userRepository.findByActualUsername(newUsername).isPresent()) {
+                redirectAttributes.addFlashAttribute("error", "Username is already taken");
+                return "redirect:/profile";
+            }
+            
+            // Update username
+            currentUser.setActualUsername(newUsername);
+            userRepository.save(currentUser);
+            
+            redirectAttributes.addFlashAttribute("success", "Username updated successfully");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Failed to update username");
+        }
+        return "redirect:/profile";
     }
     
 }
