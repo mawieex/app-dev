@@ -40,7 +40,6 @@
                                      style="width: 150px; height: 150px; object-fit: cover; border: 3px solid #007bff;"
                                      onerror="console.log('Error loading image:', this.src); this.onerror=null; this.src='/images/default-profile.png';"
                                      onload="console.log('Image loaded successfully:', this.src);">
-                                <p style="color: #333; font-size: 14px; margin-top: 10px;" th:text="${'Current path: ' + currentUser.profilePicturePath}"></p>
                             </div>
                             <div th:if="${currentUser == null or currentUser.profilePicturePath == null or currentUser.profilePicturePath.isEmpty()}">
                                 <div class="profile-picture rounded-circle"

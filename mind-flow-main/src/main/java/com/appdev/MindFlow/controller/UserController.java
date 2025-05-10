@@ -10,6 +10,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.multipart.MultipartFile;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,6 +19,10 @@ import com.appdev.MindFlow.model.User;
 import com.appdev.MindFlow.model.VerificationToken;
 import com.appdev.MindFlow.repository.VerificationTokenRepository;
 import com.appdev.MindFlow.service.UserService;
+import com.appdev.MindFlow.model.Post;
+import com.appdev.MindFlow.repository.PostRepository;
+import com.appdev.MindFlow.model.Comment;
+import com.appdev.MindFlow.repository.CommentRepository;
 
 import java.security.Principal;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -36,6 +41,12 @@ public class UserController {
     
     @Autowired
     private VerificationTokenRepository verificationTokenRepository;
+    
+    @Autowired
+    private PostRepository postRepository;
+    
+    @Autowired
+    private CommentRepository commentRepository;
     
     @GetMapping("/user/new")
     public String showUserPage(Model model) {
@@ -101,9 +112,25 @@ public class UserController {
           return "insights";
     }
     
-     @GetMapping("/community")
-     public String showCommunity() {
-          return "community";
+    @GetMapping("/community")
+    public String showCommunity(Model model) {
+        model.addAttribute("posts", postRepository.findAllByOrderByTimestampDesc());
+        return "community";
+    }
+    
+    @PostMapping("/community/post")
+    public String createPost(@RequestParam String postContent, 
+                           @AuthenticationPrincipal User currentUser,
+                           RedirectAttributes redirectAttributes) {
+        if (currentUser == null) {
+            redirectAttributes.addFlashAttribute("error", "You must be logged in to create a post.");
+            return "redirect:/user/login";
+        }
+        
+        Post post = new Post(postContent, currentUser);
+        postRepository.save(post);
+        redirectAttributes.addFlashAttribute("message", "Post created successfully!");
+        return "redirect:/community";
     }
     
     @GetMapping("/profile")
@@ -288,6 +315,47 @@ public class UserController {
             e.printStackTrace();
         }
         return ResponseEntity.notFound().build();
+    }
+    
+    @PostMapping("/community/like")
+    @ResponseBody
+    public ResponseEntity<?> toggleLike(@RequestParam Long postId, 
+                                      @AuthenticationPrincipal User currentUser) {
+        if (currentUser == null) {
+            return ResponseEntity.status(401).body("You must be logged in to like posts");
+        }
+        
+        Post post = postRepository.findById(postId)
+            .orElseThrow(() -> new RuntimeException("Post not found"));
+            
+        if (post.isLikedBy(currentUser)) {
+            post.removeLike(currentUser);
+        } else {
+            post.addLike(currentUser);
+        }
+        
+        postRepository.save(post);
+        return ResponseEntity.ok(post.getLikes().size());
+    }
+    
+    @PostMapping("/community/comment")
+    public String addComment(@RequestParam Long postId,
+                           @RequestParam String commentContent,
+                           @AuthenticationPrincipal User currentUser,
+                           RedirectAttributes redirectAttributes) {
+        if (currentUser == null) {
+            redirectAttributes.addFlashAttribute("error", "You must be logged in to comment");
+            return "redirect:/user/login";
+        }
+        
+        Post post = postRepository.findById(postId)
+            .orElseThrow(() -> new RuntimeException("Post not found"));
+            
+        Comment comment = new Comment(commentContent, currentUser, post);
+        commentRepository.save(comment);
+        
+        redirectAttributes.addFlashAttribute("message", "Comment added successfully!");
+        return "redirect:/community";
     }
     
 }
