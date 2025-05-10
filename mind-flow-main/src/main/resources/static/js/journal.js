@@ -5,13 +5,40 @@ function loadEntries() {
     entryList.innerHTML = ''; // Clear existing entries
 
     entries.forEach((entry, index) => {
-        const newEntry = document.createElement('li');
-        newEntry.className = 'list-group-item';
+        const newEntry = document.createElement('div');
+        newEntry.className = 'journal-entry';
+        
+        // Format the timestamp
+        const date = new Date(entry.timestamp);
+        const formattedDate = date.toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+
         newEntry.innerHTML = `
-            <strong>${entry.timestamp}</strong>: ${entry.journalEntry} <br>
-            <em>Mood: ${entry.mood}</em> <br>
-            <small>Tags: ${entry.tags}</small>
-            <button class="btn btn-danger btn-sm float-right" onclick="deleteEntry(${index})">Delete</button>
+            <div class="timestamp">
+                <i class="fas fa-clock"></i>
+                ${formattedDate}
+            </div>
+            <div class="content">${entry.journalEntry}</div>
+            <div class="mood mood-${entry.mood}">
+                <i class="fas fa-smile"></i>
+                ${entry.mood}
+            </div>
+            <div class="tags">
+                ${entry.tags.split(',').map(tag => `
+                    <span class="tag">${tag.trim()}</span>
+                `).join('')}
+            </div>
+            <div class="actions">
+                <button class="btn-delete" onclick="deleteEntry(${index})">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>
         `;
         entryList.appendChild(newEntry);
     });
