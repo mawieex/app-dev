@@ -1,18 +1,14 @@
 <!DOCTYPE html>
-<html>
-<head lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MindFlow Insights</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" th:href="@{/insights.css}">
-    <!-- Load jQuery first -->
+    <link rel="stylesheet" th:href="@{/css/insights.css}">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- Load Popper.js -->
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-    <!-- Load Bootstrap -->
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <!-- Load Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -43,24 +39,24 @@
                         <div class="streak-container">
                             <h3>Journal Streak</h3>
                             <div class="streak-display">
-                                <div class="streak-number" id="currentStreak">0</div>
+                                <div class="streak-number" th:text="${currentStreak != null ? currentStreak : 0}">0</div>
                                 <div class="streak-label">Current Streak</div>
                             </div>
                             <div class="streak-progress">
-                                <div class="streak-progress-bar" id="streakProgress" style="width: 0%"></div>
+                                <div class="streak-progress-bar" th:style="'width: ' + ${currentStreak != null and longestStreak != null ? (currentStreak * 100 / longestStreak) : 0} + '%'"></div>
                             </div>
                             <p class="streak-message">Keep up the good work!</p>
                             <div class="streak-achievements">
                                 <div class="achievement">
-                                    <div class="achievement-number" id="totalEntries">0</div>
+                                    <div class="achievement-number" th:text="${totalEntries != null ? totalEntries : 0}">0</div>
                                     <div class="achievement-label">Total Entries</div>
                                 </div>
                                 <div class="achievement">
-                                    <div class="achievement-number" id="longestStreak">0</div>
+                                    <div class="achievement-number" th:text="${longestStreak != null ? longestStreak : 0}">0</div>
                                     <div class="achievement-label">Longest Streak</div>
                                 </div>
                                 <div class="achievement">
-                                    <div class="achievement-number" id="completionRate">0%</div>
+                                    <div class="achievement-number" th:text="${completionRate != null ? completionRate + '%' : '0%'}">0%</div>
                                     <div class="achievement-label">Completion Rate</div>
                                 </div>
                             </div>
@@ -100,11 +96,137 @@
         </div>
     </div>
 
-    <!-- Load remaining dependencies -->
-    <script th:src="@{/js/popper.min.js}"></script>
-    <script th:src="@{/js/bootstrap.min.js}"></script>
-    
-    <!-- Load our custom scripts last -->
-    <script th:src="@{/js/insights.js}" defer></script>
+    <script th:inline="javascript">
+        // Get server-side data with default values
+        const moodDistribution = /*[[${moodDistribution != null ? moodDistribution : {}}]]*/ {};
+        const activityPatterns = /*[[${activityPatterns != null ? activityPatterns : {}}]]*/ {};
+        const entries = /*[[${entries != null ? entries : []}]]*/ [];
+
+        // Initialize charts when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mood Distribution Chart
+            const emotionsCtx = document.getElementById('emotionsChart').getContext('2d');
+            new Chart(emotionsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(moodDistribution),
+                    datasets: [{
+                        data: Object.values(moodDistribution),
+                        backgroundColor: [
+                            '#4CAF50', // Happy - Green
+                            '#2196F3', // Calm - Blue
+                            '#9E9E9E', // Neutral - Grey
+                            '#FFC107', // Anxious - Yellow
+                            '#F44336'  // Sad - Red
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // Activity Patterns Chart
+            const activitiesCtx = document.getElementById('activitiesChart').getContext('2d');
+            new Chart(activitiesCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(activityPatterns),
+                    datasets: [{
+                        label: 'Journal Entries',
+                        data: Object.values(activityPatterns),
+                        backgroundColor: '#4CAF50',
+                        borderColor: '#388E3C',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+
+            // Mood Over Time Chart
+            const moodCtx = document.getElementById('moodChart').getContext('2d');
+            const moodData = entries.map(entry => ({
+                x: new Date(entry.timestamp),
+                y: getMoodValue(entry.mood)
+            }));
+
+            new Chart(moodCtx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: 'Mood Over Time',
+                        data: moodData,
+                        borderColor: '#4CAF50',
+                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            max: 5,
+                            ticks: {
+                                stepSize: 1,
+                                callback: function(value) {
+                                    const moodLabels = {
+                                        1: 'Sad',
+                                        2: 'Anxious',
+                                        3: 'Neutral',
+                                        4: 'Calm',
+                                        5: 'Happy'
+                                    };
+                                    return moodLabels[value] || value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+
+        function getMoodValue(mood) {
+            const moodValues = {
+                'Happy': 5,
+                'Calm': 4,
+                'Neutral': 3,
+                'Anxious': 2,
+                'Sad': 1
+            };
+            return moodValues[mood] || 3;
+        }
+    </script>
 </body>
 </html>

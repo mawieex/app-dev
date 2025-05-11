@@ -20,10 +20,14 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+            .csrf(csrf -> csrf
+                .ignoringRequestMatchers("/user/login")
+            )
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**", "/*.css", "/uploads/**").permitAll() // Static resources
                 .requestMatchers("/", "/home", "/user/new", "/user/save", "/user/login", "/forgot-password", "/user/forgot-password", "/user/reset-password", "/verify-email", "/error").permitAll() // Public pages
                 .requestMatchers("/user/verify", "/user/resend-verification").permitAll() // Email verification links
+                .requestMatchers("/insights", "/journal", "/community", "/profile").authenticated() // Protected pages that require authentication
                 .anyRequest().authenticated() // All other requests need authentication
             )
             .formLogin(formLogin -> formLogin
@@ -42,7 +46,6 @@ public class SecurityConfig {
                 .deleteCookies("JSESSIONID")
                 .permitAll()
             );
-            // .csrf(csrf -> csrf.disable()); // Uncomment if you have issues with POST requests and CSRF, but understand implications
 
         return http.build();
     }

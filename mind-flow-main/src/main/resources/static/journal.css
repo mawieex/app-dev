@@ -11,16 +11,28 @@
     --light-green: #D1E1D4;
     --lighter-green: #E8F0E6;
     --text-dark: #2C3E50;
+    --background-color: #F5F7F5;
 }
 
 html, body {
     width: 100%;
+    min-height: 100vh;
     overflow-x: hidden; 
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--background-color);
 }
 
 .container-fluid {
-    padding: 0; 
+    padding: 0;
+    min-height: 100vh;
+    background-color: var(--background-color);
+}
+
+.row {
+    margin: 0;
+    padding: 0;
+    min-height: calc(100vh - 120px);
+    background-color: var(--background-color);
 }
 
 header {
@@ -45,12 +57,12 @@ header h1 {
 }
 
 body {
-    background-color: var(--light-green);
+    background-color: var(--background-color);
     color: var(--text-dark);
 }
 
 nav {
-    background-color: var(--lighter-green);
+    background-color: var(--background-color);
     padding: 20px;
     height: 100%;
     min-height: calc(100vh - 120px);
@@ -268,11 +280,6 @@ main {
 .mood-Sad {
     background-color: #F44336 !important;
     color: white !important;
-}
-
-.row {
-    margin: 0;
-    padding: 0;
 }
 
 /* Streak Badge Styles */

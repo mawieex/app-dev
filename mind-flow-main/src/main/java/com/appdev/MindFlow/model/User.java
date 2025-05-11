@@ -29,8 +29,8 @@ public class User implements UserDetails { // Implement UserDetails
     @NotBlank // Ensure that the password is not blank
     private String password;
 
-    @Column(name = "actual_username")
-    private String actualUsername;
+    @Column(nullable = false, unique = true, length = 45)
+    private String username;
 
     @Column(name = "profile_picture_path")
     private String profilePicturePath;
@@ -40,6 +40,12 @@ public class User implements UserDetails { // Implement UserDetails
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "is_active")
+    private Boolean isActive = true;
 
     private boolean emailVerified = false;
 
@@ -63,12 +69,12 @@ public class User implements UserDetails { // Implement UserDetails
         this.email = email;
     }
 
-    public String getActualUsername() {
-        return actualUsername;
+    public String getDisplayUsername() {
+        return username;
     }
 
-    public void setActualUsername(String actualUsername) {
-        this.actualUsername = actualUsername;
+    public void setDisplayUsername(String username) {
+        this.username = username;
     }
 
     public String getProfilePicturePath() {
@@ -95,6 +101,22 @@ public class User implements UserDetails { // Implement UserDetails
         this.updatedAt = updatedAt;
     }
 
+    public LocalDateTime getDeletedAt() {
+        return deletedAt;
+    }
+
+    public void setDeletedAt(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
+    }
+
+    public Boolean isActive() {
+        return isActive;
+    }
+
+    public void setActive(Boolean active) {
+        this.isActive = active;
+    }
+
     // UserDetails methods
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -116,6 +138,10 @@ public class User implements UserDetails { // Implement UserDetails
         return email;
     }
 
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
     @Override
     public boolean isAccountNonExpired() {
         return true; // Or implement logic
@@ -133,7 +159,7 @@ public class User implements UserDetails { // Implement UserDetails
 
     @Override
     public boolean isEnabled() {
-        return emailVerified; // Or return true if email verification is not strictly enforced for login
+        return emailVerified && (isActive != null && isActive) && deletedAt == null;
     }
     // End UserDetails methods
 

@@ -17,7 +17,9 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import com.appdev.MindFlow.model.User;
 import com.appdev.MindFlow.model.VerificationToken;
+import com.appdev.MindFlow.model.JournalEntry;
 import com.appdev.MindFlow.repository.VerificationTokenRepository;
+import com.appdev.MindFlow.repository.JournalEntryRepository;
 import com.appdev.MindFlow.service.UserService;
 import com.appdev.MindFlow.model.Post;
 import com.appdev.MindFlow.repository.PostRepository;
@@ -25,7 +27,6 @@ import com.appdev.MindFlow.model.Comment;
 import com.appdev.MindFlow.repository.CommentRepository;
 import com.appdev.MindFlow.repository.UserRepository;
 
-import java.security.Principal;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -34,6 +35,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Controller
 public class UserController {
@@ -53,6 +58,9 @@ public class UserController {
     @Autowired
     private UserRepository userRepository;
     
+    @Autowired
+    private JournalEntryRepository journalEntryRepository;
+    
     @GetMapping("/user/new")
     public String showUserPage(Model model) {
         model.addAttribute("user", new User());
@@ -61,7 +69,7 @@ public class UserController {
 
     @PostMapping("/user/save")
     public String saveUserForm(User user, RedirectAttributes redi) {
-        if (user.getUsername() == null || user.getUsername().trim().isEmpty()) {
+        if (user.getDisplayUsername() == null || user.getDisplayUsername().trim().isEmpty()) {
             redi.addFlashAttribute("error", "Username is required!");
             return "redirect:/user/new";
         }
@@ -92,35 +100,32 @@ public class UserController {
         
         User authenticatedUser = userService.authenticateUser(email, password);
         if (authenticatedUser != null) {
-            System.out.println("Login successful for user: " + authenticatedUser.getActualUsername());
+            System.out.println("Login successful for user: " + authenticatedUser.getDisplayUsername());
             System.out.println("User email: " + authenticatedUser.getEmail());
             System.out.println("Profile picture path: " + authenticatedUser.getProfilePicturePath());
             return "redirect:/journal";
         }
-        System.out.println("Login failed for email: " + email);
-        redi.addFlashAttribute("error", "Invalid email or password.");
+        
+        // Get user to check specific error conditions
+        Optional<User> userOpt = userService.findByEmail(email);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            if (!user.isEmailVerified()) {
+                redi.addAttribute("emailVerified", "false");
+            }
+            if (!user.isActive()) {
+                redi.addAttribute("accountDisabled", "true");
+            }
+            if (user.getDeletedAt() != null) {
+                redi.addAttribute("accountDeleted", "true");
+            }
+        }
+        
+        redi.addAttribute("email", email);
+        redi.addAttribute("error", "true");
         return "redirect:/user/login";
     }
 
-    @GetMapping("/journal")
-    public String showJournalPage(Model model, Principal principal, @AuthenticationPrincipal User currentUser) {
-        System.out.println("\n=== Journal Page Debug ===");
-        System.out.println("Current User: " + (currentUser != null ? "exists" : "null"));
-        if (currentUser != null) {
-            System.out.println("Username: " + currentUser.getActualUsername());
-            model.addAttribute("greetingUsername", currentUser.getActualUsername());
-        } else if (principal != null && principal instanceof User) {
-            System.out.println("Username from Principal: " + ((User)principal).getActualUsername());
-            model.addAttribute("greetingUsername", ((User)principal).getActualUsername());
-        }
-        return "journal";
-    }
-  
-     @GetMapping("/insights")
-     public String showInsights() {
-          return "insights";
-    }
-    
     @GetMapping("/community")
     public String showCommunity(Model model) {
         model.addAttribute("posts", postRepository.findAllByOrderByTimestampDesc());
@@ -147,7 +152,7 @@ public class UserController {
         System.out.println("\n=== Profile Page Debug ===");
         System.out.println("Current User: " + (currentUser != null ? "exists" : "null"));
         if (currentUser != null) {
-            System.out.println("Username: " + currentUser.getActualUsername());
+            System.out.println("Username: " + currentUser.getDisplayUsername());
             System.out.println("Profile Picture Path: " + currentUser.getProfilePicturePath());
         }
         model.addAttribute("currentUser", currentUser);
@@ -235,7 +240,7 @@ public class UserController {
         System.out.println("\n=== Upload Profile Picture Debug ===");
         System.out.println("Current User: " + (currentUser != null ? "exists" : "null"));
         if (currentUser != null) {
-            System.out.println("Username: " + currentUser.getActualUsername());
+            System.out.println("Username: " + currentUser.getDisplayUsername());
             System.out.println("Email: " + currentUser.getEmail());
         }
         System.out.println("Original filename: " + file.getOriginalFilename());
@@ -248,7 +253,7 @@ public class UserController {
         }
 
         try {
-            String uploadDir = "uploads/user-profile-pictures/" + currentUser.getActualUsername();
+            String uploadDir = "uploads/user-profile-pictures/" + currentUser.getDisplayUsername();
             Path uploadDirPath = Paths.get(uploadDir);
             System.out.println("Creating directory at: " + uploadDirPath.toAbsolutePath());
             
@@ -274,9 +279,9 @@ public class UserController {
             System.out.println("File exists after save: " + Files.exists(filePath));
             System.out.println("File size after save: " + Files.size(filePath) + " bytes");
 
-            String relativePath = "/uploads/user-profile-pictures/" + currentUser.getActualUsername() + "/" + filename;
+            String relativePath = "/uploads/user-profile-pictures/" + currentUser.getDisplayUsername() + "/" + filename;
             System.out.println("Updating user profile with path: " + relativePath);
-            userService.updateProfilePicturePath(currentUser.getActualUsername(), relativePath);
+            userService.updateProfilePicturePath(currentUser.getDisplayUsername(), relativePath);
             
             System.out.println("Profile picture path updated in database");
             redirectAttributes.addFlashAttribute("message", "Profile picture uploaded successfully!");
@@ -376,13 +381,13 @@ public class UserController {
                 .orElseThrow(() -> new RuntimeException("User not found"));
             
             // Check if username is already taken
-            if (userRepository.findByActualUsername(newUsername).isPresent()) {
+            if (userRepository.findByUsername(newUsername).isPresent()) {
                 redirectAttributes.addFlashAttribute("error", "Username is already taken");
                 return "redirect:/profile";
             }
             
             // Update username
-            currentUser.setActualUsername(newUsername);
+            currentUser.setDisplayUsername(newUsername);
             userRepository.save(currentUser);
             
             redirectAttributes.addFlashAttribute("success", "Username updated successfully");
@@ -392,4 +397,183 @@ public class UserController {
         return "redirect:/profile";
     }
     
+    @PostMapping("/user/deactivate-account")
+    public String deactivateAccount(@AuthenticationPrincipal User currentUser,
+                                  RedirectAttributes redirectAttributes) {
+        try {
+            userService.deactivateAccount(currentUser.getEmail());
+            redirectAttributes.addFlashAttribute("message", "Your account has been deactivated. You can reactivate it by logging in again.");
+            return "redirect:/perform_logout";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Failed to deactivate account: " + e.getMessage());
+            return "redirect:/profile";
+        }
+    }
+
+    @PostMapping("/user/delete-account")
+    public String deleteAccount(@AuthenticationPrincipal User currentUser,
+                              RedirectAttributes redirectAttributes) {
+        try {
+            userService.deleteAccount(currentUser.getEmail());
+            redirectAttributes.addFlashAttribute("message", "Your account has been deleted. We're sorry to see you go!");
+            return "redirect:/perform_logout";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Failed to delete account: " + e.getMessage());
+            return "redirect:/profile";
+        }
+    }
+    
+    @GetMapping("/insights")
+    public String showInsights(@AuthenticationPrincipal User currentUser, Model model) {
+        System.out.println("\n=== Insights Debug ===");
+        System.out.println("Current User: " + (currentUser != null ? "exists" : "null"));
+        
+        if (currentUser == null) {
+            System.out.println("No user found, redirecting to login");
+            return "redirect:/user/login";
+        }
+
+        // Get all entries for the current user
+        List<JournalEntry> entries = journalEntryRepository.findByUserOrderByTimestampDesc(currentUser);
+        System.out.println("Found " + (entries != null ? entries.size() : 0) + " journal entries");
+        
+        // Calculate insights with default values
+        int totalEntries = entries != null ? entries.size() : 0;
+        int currentStreak = entries != null ? calculateCurrentStreak(entries) : 0;
+        int longestStreak = entries != null ? calculateLongestStreak(entries) : 0;
+        int completionRate = entries != null ? calculateCompletionRate(entries) : 0;
+        
+        System.out.println("Total Entries: " + totalEntries);
+        System.out.println("Current Streak: " + currentStreak);
+        System.out.println("Longest Streak: " + longestStreak);
+        System.out.println("Completion Rate: " + completionRate);
+        
+        // Get current month's entries
+        LocalDateTime startOfMonth = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
+        LocalDateTime endOfMonth = LocalDateTime.now().withDayOfMonth(LocalDateTime.now().toLocalDate().lengthOfMonth()).withHour(23).withMinute(59).withSecond(59);
+        List<JournalEntry> monthlyEntries = journalEntryRepository.findByUserAndTimestampBetweenOrderByTimestampDesc(currentUser, startOfMonth, endOfMonth);
+        System.out.println("Found " + (monthlyEntries != null ? monthlyEntries.size() : 0) + " entries this month");
+        
+        // Prepare data for charts with default empty maps
+        Map<String, Long> moodDistribution = monthlyEntries != null ? 
+            monthlyEntries.stream()
+                .collect(Collectors.groupingBy(JournalEntry::getMood, Collectors.counting())) :
+            Map.of();
+        
+        Map<String, Long> activityPatterns = monthlyEntries != null ?
+            monthlyEntries.stream()
+                .collect(Collectors.groupingBy(entry -> entry.getTimestamp().getDayOfWeek().toString(), Collectors.counting())) :
+            Map.of();
+        
+        System.out.println("Mood Distribution: " + moodDistribution);
+        System.out.println("Activity Patterns: " + activityPatterns);
+        
+        // Add data to model
+        model.addAttribute("totalEntries", totalEntries);
+        model.addAttribute("currentStreak", currentStreak);
+        model.addAttribute("longestStreak", Math.max(longestStreak, 1)); // Ensure we never divide by zero
+        model.addAttribute("completionRate", completionRate);
+        model.addAttribute("moodDistribution", moodDistribution);
+        model.addAttribute("activityPatterns", activityPatterns);
+        model.addAttribute("entries", entries != null ? entries : List.of());
+        model.addAttribute("currentUser", currentUser);
+        
+        System.out.println("Returning insights template");
+        return "insights";
+    }
+
+    private int calculateCurrentStreak(List<JournalEntry> entries) {
+        if (entries.isEmpty()) return 0;
+        
+        int streak = 0;
+        LocalDateTime lastDate = entries.get(0).getTimestamp().toLocalDate().atStartOfDay();
+        LocalDateTime currentDate = LocalDateTime.now().toLocalDate().atStartOfDay();
+        
+        // If last entry was not today, streak is broken
+        if (lastDate.toLocalDate().isBefore(currentDate.toLocalDate())) {
+            return 0;
+        }
+        
+        for (JournalEntry entry : entries) {
+            LocalDateTime entryDate = entry.getTimestamp().toLocalDate().atStartOfDay();
+            if (entryDate.equals(lastDate)) {
+                continue;
+            }
+            if (entryDate.equals(lastDate.minusDays(1))) {
+                streak++;
+                lastDate = entryDate;
+            } else {
+                break;
+            }
+        }
+        
+        return streak + 1; // +1 for today
+    }
+
+    private int calculateLongestStreak(List<JournalEntry> entries) {
+        if (entries.isEmpty()) return 0;
+        
+        int longestStreak = 0;
+        int currentStreak = 1;
+        LocalDateTime lastDate = entries.get(0).getTimestamp().toLocalDate().atStartOfDay();
+        
+        for (int i = 1; i < entries.size(); i++) {
+            LocalDateTime currentDate = entries.get(i).getTimestamp().toLocalDate().atStartOfDay();
+            if (currentDate.equals(lastDate)) {
+                continue;
+            }
+            if (currentDate.equals(lastDate.minusDays(1))) {
+                currentStreak++;
+            } else {
+                longestStreak = Math.max(longestStreak, currentStreak);
+                currentStreak = 1;
+            }
+            lastDate = currentDate;
+        }
+        
+        return Math.max(longestStreak, currentStreak);
+    }
+
+    private int calculateCompletionRate(List<JournalEntry> entries) {
+        if (entries.isEmpty()) return 0;
+        
+        LocalDateTime firstEntryDate = entries.get(entries.size() - 1).getTimestamp();
+        long daysSinceFirstEntry = java.time.Duration.between(firstEntryDate, LocalDateTime.now()).toDays();
+        long uniqueDays = entries.stream()
+            .map(entry -> entry.getTimestamp().toLocalDate())
+            .distinct()
+            .count();
+        
+        return (int) ((uniqueDays * 100) / (daysSinceFirstEntry + 1));
+    }
+    
+    @PostMapping("/user/reactivate")
+    public String reactivateAccount(@RequestParam String email, RedirectAttributes redirectAttributes) {
+        try {
+            userService.reactivateAccount(email);
+            redirectAttributes.addFlashAttribute("message", "Your account has been reactivated. You can now log in.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Failed to reactivate account: " + e.getMessage());
+        }
+        return "redirect:/user/login";
+    }
+
+    @PostMapping("/user/fix-account")
+    public String fixAccount(@RequestParam String email, RedirectAttributes redirectAttributes) {
+        try {
+            Optional<User> userOpt = userService.findByEmail(email);
+            if (userOpt.isPresent()) {
+                User user = userOpt.get();
+                user.setActive(true);
+                user.setDeletedAt(null);
+                userService.save(user);
+                redirectAttributes.addFlashAttribute("message", "Your account has been fixed. Please try logging in again.");
+            } else {
+                redirectAttributes.addFlashAttribute("error", "No account found with that email.");
+            }
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Failed to fix account: " + e.getMessage());
+        }
+        return "redirect:/user/login";
+    }
 }

@@ -8,6 +8,7 @@
 	<link rel="stylesheet" th:href="@{/design.css}">
 	<!-- Add SweetAlert2 CSS -->
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 	<style>
 		.alert {
 			position: fixed;
@@ -39,8 +40,23 @@
 	</div>
 
 	<!-- Login Error Message -->
-	<div th:if="${param.error}" class="error-message" style="color: red; text-align: center; margin-bottom: 10px;">
-		Invalid email or password.
+	<div th:if="${param.error}" class="alert alert-danger">
+		<div th:if="${param.emailVerified == 'false'}">
+			Your email is not verified. Please check your email for the verification link.
+		</div>
+		<div th:if="${param.accountDisabled == 'true'}">
+			Your account is disabled. 
+			<form th:action="@{/user/fix-account}" method="post" class="mt-2">
+				<input type="hidden" name="email" th:value="${param.email}" />
+				<button type="submit" class="btn btn-link p-0">Click here to fix your account</button>
+			</form>
+		</div>
+		<div th:if="${param.accountDeleted == 'true'}">
+			Your account has been deleted. Please contact support if you believe this is an error.
+		</div>
+		<div th:if="${param.emailVerified != 'false'} and ${param.accountDisabled != 'true'} and ${param.accountDeleted != 'true'}">
+			Invalid email or password.
+		</div>
 	</div>
 
 	<div class="container mt-5">
@@ -57,7 +73,7 @@
 							
 							<div class="form-group">
 								<label for="email">Email</label>
-								<input type="email" class="form-control" id="email" name="email" required autofocus>
+								<input type="email" class="form-control" id="email" name="email" required>
 							</div>
 							<div class="form-group">
 								<label for="password">Password</label>
@@ -80,21 +96,25 @@
 
 	<!-- Add script for general popup messages (e.g., from registration success) -->
 	<script th:if="${message}" th:inline="javascript">
-		Swal.fire({
-			title: 'Success!',
-			text: /*[[${message}]]*/ '',
-			icon: 'success',
-			confirmButtonText: 'OK'
+		document.addEventListener('DOMContentLoaded', function() {
+			Swal.fire({
+				title: 'Success!',
+				text: /*[[${message}]]*/ '',
+				icon: 'success',
+				confirmButtonText: 'OK'
+			});
 		});
 	</script>
 
 	<!-- Optional: If you want to use SweetAlert for login error specifically -->
 	<script th:if="${param.error}" th:inline="javascript">
-		Swal.fire({
-			title: 'Login Failed!',
-			text: 'Invalid email or password.',
-			icon: 'error',
-			confirmButtonText: 'OK'
+		document.addEventListener('DOMContentLoaded', function() {
+			Swal.fire({
+				title: 'Login Failed!',
+				text: 'Invalid email or password.',
+				icon: 'error',
+				confirmButtonText: 'OK'
+			});
 		});
 	</script>
 
@@ -102,8 +122,6 @@
 	<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
 	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-	<!-- Add SweetAlert2 JS -->
-	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 	<!-- Thymeleaf inline scripts for notifications -->
 	<script th:inline="javascript">
