@@ -13,6 +13,9 @@ import com.appdev.MindFlow.repository.JournalEntryRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 @Controller
 @RequestMapping("/journal")
@@ -22,12 +25,15 @@ public class JournalController {
     private JournalEntryRepository journalEntryRepository;
 
     @GetMapping
-    public String showJournalPage(Model model, @AuthenticationPrincipal User currentUser) {
+    public String showJournalPage(Model model, @AuthenticationPrincipal User currentUser,
+                                @RequestParam(defaultValue = "0") int page,
+                                @RequestParam(defaultValue = "10") int size) {
         if (currentUser == null) {
             return "redirect:/user/login";
         }
         
-        List<JournalEntry> entries = journalEntryRepository.findByUserOrderByTimestampDesc(currentUser);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("timestamp").descending());
+        List<JournalEntry> entries = journalEntryRepository.findByUserOrderByTimestampDesc(currentUser, pageable);
         model.addAttribute("entries", entries);
         model.addAttribute("currentUser", currentUser);
         return "journal";

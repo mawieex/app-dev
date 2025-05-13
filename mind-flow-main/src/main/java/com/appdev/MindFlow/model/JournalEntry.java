@@ -6,7 +6,10 @@ import java.util.List;
 import java.util.ArrayList;
 
 @Entity
-@Table(name = "journal_entries")
+@Table(name = "journal_entries", indexes = {
+    @Index(name = "idx_journal_timestamp", columnList = "timestamp"),
+    @Index(name = "idx_journal_user", columnList = "user_id")
+})
 public class JournalEntry {
 
     @Id
@@ -23,7 +26,7 @@ public class JournalEntry {
     @Column(nullable = false)
     private LocalDateTime timestamp;
 
-    @ElementCollection(fetch = FetchType.EAGER) // EAGER or LAZY depending on your use case
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "journal_entry_tags", joinColumns = @JoinColumn(name = "journal_entry_id"))
     @Column(name = "tag")
     private List<String> tags = new ArrayList<>();

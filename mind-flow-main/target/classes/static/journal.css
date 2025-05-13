@@ -131,6 +131,7 @@ main {
     border-radius: 8px;
     padding: 12px;
     transition: all 0.3s ease;
+    height: 50px;
 }
 
 .form-control:focus {

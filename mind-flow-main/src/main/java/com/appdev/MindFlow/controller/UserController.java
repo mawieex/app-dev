@@ -39,6 +39,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 @Controller
 public class UserController {
@@ -424,62 +427,67 @@ public class UserController {
     }
     
     @GetMapping("/insights")
-    public String showInsights(@AuthenticationPrincipal User currentUser, Model model) {
+    public String showInsights(@AuthenticationPrincipal User currentUser, Model model,
+                              @RequestParam(defaultValue = "0") int page,
+                              @RequestParam(defaultValue = "30") int size) {
         System.out.println("\n=== Insights Debug ===");
-        System.out.println("Current User: " + (currentUser != null ? "exists" : "null"));
-        
-        if (currentUser == null) {
-            System.out.println("No user found, redirecting to login");
-            return "redirect:/user/login";
-        }
+        try {
+            if (currentUser == null) {
+                return "redirect:/user/login";
+            }
 
-        // Get all entries for the current user
-        List<JournalEntry> entries = journalEntryRepository.findByUserOrderByTimestampDesc(currentUser);
-        System.out.println("Found " + (entries != null ? entries.size() : 0) + " journal entries");
-        
-        // Calculate insights with default values
-        int totalEntries = entries != null ? entries.size() : 0;
-        int currentStreak = entries != null ? calculateCurrentStreak(entries) : 0;
-        int longestStreak = entries != null ? calculateLongestStreak(entries) : 0;
-        int completionRate = entries != null ? calculateCompletionRate(entries) : 0;
-        
-        System.out.println("Total Entries: " + totalEntries);
-        System.out.println("Current Streak: " + currentStreak);
-        System.out.println("Longest Streak: " + longestStreak);
-        System.out.println("Completion Rate: " + completionRate);
-        
-        // Get current month's entries
-        LocalDateTime startOfMonth = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
-        LocalDateTime endOfMonth = LocalDateTime.now().withDayOfMonth(LocalDateTime.now().toLocalDate().lengthOfMonth()).withHour(23).withMinute(59).withSecond(59);
-        List<JournalEntry> monthlyEntries = journalEntryRepository.findByUserAndTimestampBetweenOrderByTimestampDesc(currentUser, startOfMonth, endOfMonth);
-        System.out.println("Found " + (monthlyEntries != null ? monthlyEntries.size() : 0) + " entries this month");
-        
-        // Prepare data for charts with default empty maps
-        Map<String, Long> moodDistribution = monthlyEntries != null ? 
-            monthlyEntries.stream()
-                .collect(Collectors.groupingBy(JournalEntry::getMood, Collectors.counting())) :
-            Map.of();
-        
-        Map<String, Long> activityPatterns = monthlyEntries != null ?
-            monthlyEntries.stream()
-                .collect(Collectors.groupingBy(entry -> entry.getTimestamp().getDayOfWeek().toString(), Collectors.counting())) :
-            Map.of();
-        
-        System.out.println("Mood Distribution: " + moodDistribution);
-        System.out.println("Activity Patterns: " + activityPatterns);
-        
-        // Add data to model
-        model.addAttribute("totalEntries", totalEntries);
-        model.addAttribute("currentStreak", currentStreak);
-        model.addAttribute("longestStreak", Math.max(longestStreak, 1)); // Ensure we never divide by zero
-        model.addAttribute("completionRate", completionRate);
-        model.addAttribute("moodDistribution", moodDistribution);
-        model.addAttribute("activityPatterns", activityPatterns);
-        model.addAttribute("entries", entries != null ? entries : List.of());
-        model.addAttribute("currentUser", currentUser);
-        
-        System.out.println("Returning insights template");
-        return "insights";
+            // Get current month's entries with pagination
+            LocalDateTime startOfMonth = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
+            LocalDateTime endOfMonth = LocalDateTime.now().withDayOfMonth(LocalDateTime.now().toLocalDate().lengthOfMonth()).withHour(23).withMinute(59).withSecond(59);
+            
+            // Get only the last 30 entries for mood chart
+            Pageable pageable = PageRequest.of(0, 30, Sort.by("timestamp").descending());
+            List<JournalEntry> recentEntries = journalEntryRepository.findByUserOrderByTimestampDesc(currentUser, pageable);
+            
+            // Get monthly entries for charts
+            List<JournalEntry> monthlyEntries = journalEntryRepository.findByUserAndTimestampBetweenOrderByTimestampDesc(
+                currentUser, startOfMonth, endOfMonth);
+
+            // Calculate insights using database queries
+            int totalEntries = journalEntryRepository.countByUser(currentUser);
+            int currentStreak = calculateCurrentStreak(recentEntries);
+            int longestStreak = calculateLongestStreak(recentEntries);
+            int completionRate = calculateCompletionRate(recentEntries);
+            
+            // Prepare data for charts
+            Map<String, Long> moodDistribution = monthlyEntries.stream()
+                .collect(Collectors.groupingBy(JournalEntry::getMood, Collectors.counting()));
+            
+            Map<String, Long> activityPatterns = monthlyEntries.stream()
+                .collect(Collectors.groupingBy(entry -> entry.getTimestamp().getDayOfWeek().toString(), Collectors.counting()));
+            
+            // Add data to model
+            model.addAttribute("totalEntries", totalEntries);
+            model.addAttribute("currentStreak", currentStreak);
+            model.addAttribute("longestStreak", Math.max(longestStreak, 1));
+            model.addAttribute("completionRate", completionRate);
+            model.addAttribute("moodDistribution", moodDistribution);
+            model.addAttribute("activityPatterns", activityPatterns);
+
+            // Create a simpler data structure for the mood chart
+            List<Map<String, Object>> moodChartData = recentEntries.stream()
+                .map(entry -> {
+                    Map<String, Object> dataPoint = new java.util.HashMap<>();
+                    dataPoint.put("timestamp", entry.getTimestamp().atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli());
+                    dataPoint.put("mood", entry.getMood());
+                    return dataPoint;
+                })
+                .collect(Collectors.toList());
+            model.addAttribute("moodChartData", moodChartData);
+
+            model.addAttribute("currentUser", currentUser);
+            
+            return "insights";
+        } catch (Exception e) {
+            System.out.println("ERROR in showInsights: " + e.getMessage());
+            e.printStackTrace();
+            return "redirect:/journal";
+        }
     }
 
     private int calculateCurrentStreak(List<JournalEntry> entries) {

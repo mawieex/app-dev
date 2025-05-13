@@ -5,11 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MindFlow Insights</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" th:href="@{/css/insights.css}">
+    <link rel="stylesheet" th:href="@{/insights.css}">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@^2/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@^1/dist/chartjs-adapter-moment.min.js"></script>
 </head>
 <body>
     <div class="container-fluid">
@@ -97,136 +99,205 @@
     </div>
 
     <script th:inline="javascript">
-        // Get server-side data with default values
-        const moodDistribution = /*[[${moodDistribution != null ? moodDistribution : {}}]]*/ {};
-        const activityPatterns = /*[[${activityPatterns != null ? activityPatterns : {}}]]*/ {};
-        const entries = /*[[${entries != null ? entries : []}]]*/ [];
+        // Explicitly register the TimeScale component
+        // Although the adapter should handle this, let's be sure.
+        // Chart.register(Chart.TimeScale); 
 
-        // Initialize charts when DOM is loaded
-        document.addEventListener('DOMContentLoaded', function() {
-            // Mood Distribution Chart
-            const emotionsCtx = document.getElementById('emotionsChart').getContext('2d');
-            new Chart(emotionsCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(moodDistribution),
-                    datasets: [{
-                        data: Object.values(moodDistribution),
-                        backgroundColor: [
-                            '#4CAF50', // Happy - Green
-                            '#2196F3', // Calm - Blue
-                            '#9E9E9E', // Neutral - Grey
-                            '#FFC107', // Anxious - Yellow
-                            '#F44336'  // Sad - Red
-                        ]
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
-                        }
-                    }
-                }
-            });
-
-            // Activity Patterns Chart
-            const activitiesCtx = document.getElementById('activitiesChart').getContext('2d');
-            new Chart(activitiesCtx, {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(activityPatterns),
-                    datasets: [{
-                        label: 'Journal Entries',
-                        data: Object.values(activityPatterns),
-                        backgroundColor: '#4CAF50',
-                        borderColor: '#388E3C',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                stepSize: 1
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    }
-                }
-            });
-
-            // Mood Over Time Chart
-            const moodCtx = document.getElementById('moodChart').getContext('2d');
-            const moodData = entries.map(entry => ({
-                x: new Date(entry.timestamp),
-                y: getMoodValue(entry.mood)
-            }));
-
-            new Chart(moodCtx, {
-                type: 'line',
-                data: {
-                    datasets: [{
-                        label: 'Mood Over Time',
-                        data: moodData,
-                        borderColor: '#4CAF50',
-                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            type: 'time',
-                            time: {
-                                unit: 'day'
-                            }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            max: 5,
-                            ticks: {
-                                stepSize: 1,
-                                callback: function(value) {
-                                    const moodLabels = {
-                                        1: 'Sad',
-                                        2: 'Anxious',
-                                        3: 'Neutral',
-                                        4: 'Calm',
-                                        5: 'Happy'
-                                    };
-                                    return moodLabels[value] || value;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        });
+        // Debug logging
+        console.log('=== Debug Information ===');
+        console.log('Mood Chart Data:', /*[[${moodChartData}]]*/ null);
+        console.log('Mood Distribution:', /*[[${moodDistribution}]]*/ {});
+        console.log('Activity Patterns:', /*[[${activityPatterns}]]*/ {});
+        
+        // Helper function to convert mood strings to numeric values
+        const moodValues = {
+            'Happy': 5,
+            'Calm': 4,
+            'Neutral': 3,
+            'Anxious': 2,
+            'Sad': 1
+        };
 
         function getMoodValue(mood) {
-            const moodValues = {
-                'Happy': 5,
-                'Calm': 4,
-                'Neutral': 3,
-                'Anxious': 2,
-                'Sad': 1
-            };
             return moodValues[mood] || 3;
         }
+
+        // Get server-side data
+        const moodDistribution = /*[[${moodDistribution}]]*/ {};
+        const activityPatterns = /*[[${activityPatterns}]]*/ {};
+        const moodChartData = /*[[${moodChartData}]]*/ null;
+
+        // Chart instances
+        let moodChart = null;
+        let emotionsChart = null;
+        let activitiesChart = null;
+
+        // Initialize all charts when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Use setTimeout to potentially defer execution until adapter scripts are loaded
+            setTimeout(function() {
+                console.log('DOM loaded, initializing charts (after timeout)...');
+                console.log('Chart.js available:', typeof Chart !== 'undefined');
+
+                // Ensure TimeScale is registered after adapter is likely loaded
+                Chart.register(Chart.TimeScale); 
+                
+                // Initialize Mood Chart
+                const moodCtx = document.getElementById('moodChart');
+                console.log('Mood chart canvas found:', !!moodCtx);
+                if (moodCtx && moodChartData && moodChartData.length > 0) {
+                    console.log('Initializing mood chart with entries:', moodChartData.length);
+                    const processedMoodData = moodChartData.map(dataPoint => ({ 
+                        x: dataPoint.timestamp,
+                        y: getMoodValue(dataPoint.mood)
+                    }));
+                    console.log('Processed mood data:', processedMoodData);
+
+                    try {
+                        moodChart = new Chart(moodCtx.getContext('2d'), {
+                            type: 'line',
+                            data: {
+                                datasets: [{
+                                    label: 'Mood Over Time',
+                                    data: processedMoodData,
+                                    borderColor: '#4CAF50',
+                                    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                                    borderWidth: 2,
+                                    fill: true,
+                                    tension: 0.4
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    x: {
+                                        type: 'time',
+                                        time: {
+                                            unit: 'day'
+                                        }
+                                    },
+                                    y: {
+                                        beginAtZero: true,
+                                        max: 5,
+                                        ticks: {
+                                            stepSize: 1,
+                                            callback: value => {
+                                                const moodLabels = {
+                                                    1: 'Sad',
+                                                    2: 'Anxious',
+                                                    3: 'Neutral',
+                                                    4: 'Calm',
+                                                    5: 'Happy'
+                                                };
+                                                return moodLabels[value] || value;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                        console.log('Mood chart initialized successfully');
+                    } catch (error) {
+                        console.error('Error initializing mood chart:', error);
+                    }
+                } else {
+                    console.log('Cannot initialize mood chart:', {
+                        canvasFound: !!moodCtx,
+                        hasEntries: moodChartData ? moodChartData.length > 0 : false 
+                    });
+                }
+
+                // Initialize Emotions Chart
+                const emotionsCtx = document.getElementById('emotionsChart');
+                console.log('Emotions chart canvas found:', !!emotionsCtx);
+                if (emotionsCtx && moodDistribution && Object.keys(moodDistribution).length > 0) {
+                    console.log('Initializing emotions chart with distribution:', moodDistribution);
+                    try {
+                        emotionsChart = new Chart(emotionsCtx.getContext('2d'), {
+                            type: 'doughnut',
+                            data: {
+                                labels: Object.keys(moodDistribution),
+                                datasets: [{
+                                    data: Object.values(moodDistribution),
+                                    backgroundColor: [
+                                        '#4CAF50', // Happy
+                                        '#2196F3', // Calm
+                                        '#9E9E9E', // Neutral
+                                        '#FFC107', // Anxious
+                                        '#F44336'  // Sad
+                                    ]
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        position: 'bottom'
+                                    }
+                                }
+                            }
+                        });
+                        console.log('Emotions chart initialized successfully');
+                    } catch (error) {
+                        console.error('Error initializing emotions chart:', error);
+                    }
+                } else {
+                    console.log('Cannot initialize emotions chart:', {
+                        canvasFound: !!emotionsCtx,
+                        hasDistribution: Object.keys(moodDistribution).length > 0
+                    });
+                }
+
+                // Initialize Activities Chart
+                const activitiesCtx = document.getElementById('activitiesChart');
+                console.log('Activities chart canvas found:', !!activitiesCtx);
+                if (activitiesCtx && activityPatterns && Object.keys(activityPatterns).length > 0) {
+                    console.log('Initializing activities chart with patterns:', activityPatterns);
+                    try {
+                        activitiesChart = new Chart(activitiesCtx.getContext('2d'), {
+                            type: 'bar',
+                            data: {
+                                labels: Object.keys(activityPatterns),
+                                datasets: [{
+                                    label: 'Journal Entries',
+                                    data: Object.values(activityPatterns),
+                                    backgroundColor: '#4CAF50',
+                                    borderColor: '#388E3C',
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        ticks: {
+                                            stepSize: 1
+                                        }
+                                    }
+                                },
+                                plugins: {
+                                    legend: {
+                                        display: false
+                                    }
+                                }
+                            }
+                        });
+                        console.log('Activities chart initialized successfully');
+                    } catch (error) {
+                        console.error('Error initializing activities chart:', error);
+                    }
+                } else {
+                    console.log('Cannot initialize activities chart:', {
+                        canvasFound: !!activitiesCtx,
+                        hasPatterns: activityPatterns ? Object.keys(activityPatterns).length > 0 : false 
+                    });
+                }
+            }, 0); // Delay of 0ms
+        });
     </script>
 </body>
 </html>
