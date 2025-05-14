@@ -28,6 +28,67 @@
 				opacity: 1;
 			}
 		}
+		body {
+			background-color: var(--light-green); /* Use theme variable */
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			min-height: 100vh;
+			padding-top: 3rem; /* Add some padding at the top */
+			font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Match global font */
+			color: var(--text-dark); /* Match global text color */
+		}
+		.welcome-header {
+			text-align: center;
+			margin-bottom: 2rem;
+		}
+		.welcome-header h1 {
+			font-size: 3rem;
+			font-weight: bold;
+			color: var(--dark-green); /* Theme color */
+		}
+		.welcome-header p {
+			font-size: 1.25rem;
+			color: var(--text-dark); /* Theme color */
+		}
+		.login-card {
+			background-color: white; /* Explicitly white, or var(--lighter-green) for softer look */
+			border-radius: 10px;
+			box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+		}
+		.login-card .card-header {
+			background-color: var(--primary-green);
+			color: var(--text-dark);
+			border-bottom: 2px solid var(--dark-green);
+			border-top-left-radius: 10px;
+			border-top-right-radius: 10px;
+		}
+		.login-card .card-header h2 {
+			color: var(--text-dark); /* Ensure header text is dark */
+		}
+		.login-card .form-control {
+			border: 1px solid var(--light-green);
+		}
+		.login-card .form-control:focus {
+			border-color: var(--primary-green);
+    		box-shadow: 0 0 0 0.2rem rgba(168, 195, 166, 0.25); /* From design.css */
+		}
+		.login-card .btn-primary {
+			background-color: var(--primary-green);
+			border-color: var(--primary-green);
+			color: var(--text-dark);
+		}
+		.login-card .btn-primary:hover {
+			background-color: var(--dark-green);
+			border-color: var(--dark-green);
+			color: white;
+		}
+		.login-card .btn-link {
+			color: var(--dark-green);
+		}
+		.login-card .btn-link:hover {
+			color: var(--primary-green);
+		}
 	</style>
 </head>
 <body>
@@ -59,10 +120,15 @@
 		</div>
 	</div>
 
-	<div class="container mt-5">
+	<div class="welcome-header">
+		<h1>Welcome to MindFlow</h1>
+		<p>Your personal space for thoughts, reflections, and growth.</p>
+	</div>
+
+	<div class="container">
 		<div class="row justify-content-center">
 			<div class="col-md-6">
-				<div class="card">
+				<div class="card login-card">
 					<div class="card-header">
 						<h2 class="text-center">Login</h2>
 					</div>

@@ -15,7 +15,7 @@
             height: 200px;
             object-fit: cover;
             border-radius: 50%;
-            border: 3px solid #007bff;
+            border: 3px solid var(--primary-green);
             margin-bottom: 20px;
         }
         .upload-form {
@@ -33,6 +33,16 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
+        .btn-primary {
+            background-color: var(--primary-green);
+            border-color: var(--primary-green);
+            color: var(--text-dark);
+        }
+        .btn-primary:hover {
+            background-color: var(--dark-green);
+            border-color: var(--dark-green);
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -46,8 +56,8 @@
                     <div class="card-body">
                         <!-- Current Profile Picture Display -->
                         <div class="profile-picture-container">
-                            <div th:if="${currentUser != null && currentUser.profilePicturePath != null and !currentUser.profilePicturePath.isEmpty()}">
-                                <img th:src="@{'/user/profile-picture/' + ${currentUser.actualUsername}}" 
+                            <div th:if="${currentUser != null && currentUser.profilePicturePath != null && !currentUser.profilePicturePath.isEmpty()}">
+                                <img th:src="@{'/user/profile-picture/' + ${currentUser.displayUsername}}" 
                                      alt="Current Profile Picture" 
                                      class="profile-picture" />
                             </div>
