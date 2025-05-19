@@ -20,4 +20,12 @@ public interface JournalEntryRepository extends JpaRepository<JournalEntry, Long
     
     @Query("SELECT COUNT(DISTINCT DATE(e.timestamp)) FROM JournalEntry e WHERE e.user = ?1")
     int countUniqueDaysByUser(User user);
+
+    List<JournalEntry> findByMoodIgnoreCase(String mood);
+    
+    @Query("SELECT e FROM JournalEntry e JOIN e.tags t WHERE t = ?1")
+    List<JournalEntry> findByTag(String tag);
+
+    @Query("SELECT e FROM JournalEntry e WHERE LOWER(e.mood) LIKE LOWER(CONCAT('%', ?1, '%'))")
+    List<JournalEntry> searchByMood(String searchTerm);
 } 

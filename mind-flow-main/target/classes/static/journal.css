@@ -299,3 +299,103 @@ main {
     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
+.journal-entry-form {
+    background-color: white;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--light-green);
+}
+
+.journal-entry-form h2 {
+    color: var(--dark-green);
+    margin-bottom: 20px;
+    font-size: 1.4rem;
+    font-weight: 600;
+}
+
+.journal-entry-form .form-group {
+    margin-bottom: 20px;
+}
+
+.journal-entry-form textarea.form-control {
+    height: auto;
+    min-height: 100px;
+}
+
+/* Mood Selection Styles */
+.mood-selection {
+    padding: 10px 0;
+}
+
+.mood-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 15px;
+    border: 2px solid var(--light-green);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background-color: white;
+}
+
+.mood-option:hover {
+    transform: translateY(-2px);
+    border-color: var(--primary-green);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.mood-option.selected {
+    background-color: var(--primary-green);
+    border-color: var(--dark-green);
+}
+
+.mood-icon {
+    font-size: 2rem;
+    margin-bottom: 8px;
+}
+
+.mood-label {
+    font-size: 0.9rem;
+    color: var(--text-dark);
+    font-weight: 500;
+}
+
+.mood-option.selected .mood-label {
+    color: white;
+}
+
+/* Tags Input Styles */
+.tags-input {
+    position: relative;
+}
+
+.selected-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tag-item {
+    background-color: var(--primary-green);
+    color: white;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tag-item .remove-tag {
+    cursor: pointer;
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+.tag-item .remove-tag:hover {
+    color: var(--darker-green);
+}
+

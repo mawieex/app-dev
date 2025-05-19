@@ -13,39 +13,31 @@ import java.util.ArrayList;
 public class JournalEntry {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
-
-    @Lob
-    @Column(nullable = false)
+    private String title;
     private String content;
-
-    @Column(nullable = false)
-    private String mood; // Consider using an Enum for Mood if you want more type safety
-
-    @Column(nullable = false)
+    private String mood; // We can refine this later, e.g., to an Enum
     private LocalDateTime timestamp;
 
-    @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(name = "journal_entry_tags", joinColumns = @JoinColumn(name = "journal_entry_id"))
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    @ElementCollection
+    @CollectionTable(name = "journal_tags", joinColumns = @JoinColumn(name = "journal_id"))
     @Column(name = "tag")
     private List<String> tags = new ArrayList<>();
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-
     // Constructors
     public JournalEntry() {
-        this.timestamp = LocalDateTime.now(); // Default timestamp to now
     }
 
-    public JournalEntry(String content, String mood, User user, List<String> tags) {
+    public JournalEntry(String title, String content, String mood, LocalDateTime timestamp) {
+        this.title = title;
         this.content = content;
         this.mood = mood;
-        this.user = user;
-        this.tags = tags != null ? tags : new ArrayList<>();
-        this.timestamp = LocalDateTime.now();
+        this.timestamp = timestamp;
     }
 
     // Getters and Setters
@@ -55,6 +47,14 @@ public class JournalEntry {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public String getContent() {
@@ -81,14 +81,6 @@ public class JournalEntry {
         this.timestamp = timestamp;
     }
 
-    public List<String> getTags() {
-        return tags;
-    }
-
-    public void setTags(List<String> tags) {
-        this.tags = tags;
-    }
-
     public User getUser() {
         return user;
     }
@@ -97,14 +89,23 @@ public class JournalEntry {
         this.user = user;
     }
 
+    public List<String> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<String> tags) {
+        this.tags = tags;
+    }
+
+    // toString()
     @Override
     public String toString() {
         return "JournalEntry{" +
-               "id=" + id +
-               ", mood='" + mood + "'" +
-               ", timestamp=" + timestamp +
-               ", userId=" + (user != null ? user.getId() : "null") +
-               ", tags=" + tags +
-               '}';
+                "id=" + id +
+                ", title='" + title + '\'' +
+                ", content='" + content + '\'' +
+                ", mood='" + mood + '\'' +
+                ", timestamp=" + timestamp +
+                '}';
     }
 } 

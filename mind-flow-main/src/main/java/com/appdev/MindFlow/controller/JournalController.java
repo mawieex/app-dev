@@ -27,15 +27,24 @@ public class JournalController {
     @GetMapping
     public String showJournalPage(Model model, @AuthenticationPrincipal User currentUser,
                                 @RequestParam(defaultValue = "0") int page,
-                                @RequestParam(defaultValue = "10") int size) {
+                                @RequestParam(defaultValue = "10") int size,
+                                @RequestParam(required = false) String searchMood) {
         if (currentUser == null) {
             return "redirect:/user/login";
         }
         
         Pageable pageable = PageRequest.of(page, size, Sort.by("timestamp").descending());
-        List<JournalEntry> entries = journalEntryRepository.findByUserOrderByTimestampDesc(currentUser, pageable);
+        List<JournalEntry> entries;
+        
+        if (searchMood != null && !searchMood.trim().isEmpty()) {
+            entries = journalEntryRepository.searchByMood(searchMood);
+        } else {
+            entries = journalEntryRepository.findByUserOrderByTimestampDesc(currentUser, pageable);
+        }
+        
         model.addAttribute("entries", entries);
         model.addAttribute("currentUser", currentUser);
+        model.addAttribute("searchMood", searchMood);
         return "journal";
     }
 
