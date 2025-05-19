@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" th:href="@{/journal.css}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.min.css">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
 </head>
 <body>
     <div class="container-fluid">
@@ -131,89 +133,19 @@
                 confirmButtonText: 'OK'
             });
         }
-    </script>
-    <script>
-      window.onload = function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('searchMood')) {
-          const entriesSection = document.getElementById('journalEntries');
-          if (entriesSection) {
-            entriesSection.scrollIntoView({ behavior: 'smooth' });
-          }
-        }
-        // Instant Mood Filter
-        const moodFilterInput = document.getElementById('moodFilterInput');
-        const moodFilterBtn = document.getElementById('moodFilterBtn');
-        function filterEntries() {
-          const filter = moodFilterInput.value.trim().toLowerCase();
-          const entries = document.querySelectorAll('#entriesList .journal-entry');
-          entries.forEach(entry => {
-            const moodElem = entry.querySelector('.mood');
-            const contentElem = entry.querySelector('.content');
-            const tagElems = entry.querySelectorAll('.tags .tag');
-            const mood = moodElem ? moodElem.textContent.trim().toLowerCase() : '';
-            const content = contentElem ? contentElem.textContent.trim().toLowerCase() : '';
-            let tags = '';
-            tagElems.forEach(tag => { tags += tag.textContent.trim().toLowerCase() + ' '; });
-            if (!filter || mood.includes(filter) || content.includes(filter) || tags.includes(filter)) {
-              entry.style.display = '';
-            } else {
-              entry.style.display = 'none';
-            }
-          });
-        }
-        if (moodFilterInput) {
-          moodFilterInput.addEventListener('input', filterEntries);
-        }
-        if (moodFilterBtn) {
-          moodFilterBtn.addEventListener('click', filterEntries);
-        }
 
-        // Mood Suggestion Feature
-        const contentInput = document.getElementById('content');
-        const moodSelect = document.getElementById('mood');
-        const moodSuggestion = document.getElementById('moodSuggestion');
-        // Simple keyword-to-mood mapping
-        const moodKeywords = [
-          { mood: 'Happy', keywords: [
-            'happy','joy','joyful','delighted','cheerful','elated','glad','pleased','content','upbeat','positive','optimistic','satisfied','blessed','fortunate','lively','energetic','enthusiastic','radiant','sunny','jubilant','blissful','overjoyed','thrilled','wonderful','grateful','excited','good','awesome','fantastic','amazing'] },
-          { mood: 'Calm', keywords: [
-            'calm','peaceful','tranquil','composed','relaxed','serene','chill','at ease','mellow','quiet','still','restful','undisturbed','untroubled','placid','laid-back','easygoing','gentle','patient','collected','cool','unworried'] },
-          { mood: 'Neutral', keywords: [
-            'neutral','okay','fine','meh','average','so-so','indifferent','normal','regular','nothing special','unremarkable','standard','moderate','fair','tolerable','passable','middling','unexcited','unmoved'] },
-          { mood: 'Anxious', keywords: [
-            'anxious','nervous','worried','stressed','uneasy','panic','afraid','scared','apprehensive','tense','restless','jittery','fearful','concerned','agitated','troubled','pressured','overwhelmed','insecure','dread','fidgety','on edge','nervousness'] },
-          { mood: 'Sad', keywords: [
-            'sad','down','depressed','unhappy','low','cry','crying','lonely','tired','exhausted','miserable','gloomy','sorrowful','blue','heartbroken','hopeless','upset','discouraged','melancholic','dejected','disheartened','dispirited','grief','mournful','somber','tearful','wretched','lost','empty','hurt','pained'] }
-        ];
-        if (contentInput && moodSuggestion && moodSelect) {
-          contentInput.addEventListener('input', function() {
-            const text = this.value.toLowerCase();
-            let suggestedMood = null;
-            for (const moodObj of moodKeywords) {
-              for (const keyword of moodObj.keywords) {
-                if (text.includes(keyword)) {
-                  suggestedMood = moodObj.mood;
-                  break;
-                }
-              }
-              if (suggestedMood) break;
-            }
-            if (suggestedMood) {
-              moodSuggestion.innerHTML = `<span style="background:#023020;color:#fff;padding:8px 16px;border-radius:16px;cursor:pointer;font-size:1rem;">Suggested mood: <b>${suggestedMood}</b> (click to use)</span>`;
-              moodSuggestion.style.display = '';
-              moodSuggestion.onclick = function() {
-                moodSelect.value = suggestedMood;
-                moodSuggestion.style.display = 'none';
-              };
-            } else {
-              moodSuggestion.style.display = 'none';
-              moodSuggestion.innerHTML = '';
-              moodSuggestion.onclick = null;
-            }
-          });
-        }
-      }
+        const csrfToken = document.querySelector('meta[name=\"_csrf\"]').getAttribute('content');
+        const csrfHeader = document.querySelector('meta[name=\"_csrf_header\"]').getAttribute('content');
+
+        fetch('/api/mood-suggest', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            [csrfHeader]: csrfToken
+          },
+          body: JSON.stringify({ text: entryText })
+        })
     </script>
+    <script th:src="@{/js/journal.js}"></script>
 </body>
 </html>
