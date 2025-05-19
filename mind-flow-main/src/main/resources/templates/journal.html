@@ -43,6 +43,7 @@
                             <label for="content">What's on your mind?</label>
                             <textarea class="form-control" id="content" name="content" rows="4" required 
                                     placeholder="Write your thoughts here..."></textarea>
+                            <div id="moodSuggestion" class="mt-2" style="display:none;"></div>
                         </div>
                         <div class="form-group">
                             <label for="mood">How are you feeling?</label>
@@ -166,6 +167,51 @@
         }
         if (moodFilterBtn) {
           moodFilterBtn.addEventListener('click', filterEntries);
+        }
+
+        // Mood Suggestion Feature
+        const contentInput = document.getElementById('content');
+        const moodSelect = document.getElementById('mood');
+        const moodSuggestion = document.getElementById('moodSuggestion');
+        // Simple keyword-to-mood mapping
+        const moodKeywords = [
+          { mood: 'Happy', keywords: [
+            'happy','joy','joyful','delighted','cheerful','elated','glad','pleased','content','upbeat','positive','optimistic','satisfied','blessed','fortunate','lively','energetic','enthusiastic','radiant','sunny','jubilant','blissful','overjoyed','thrilled','wonderful','grateful','excited','good','awesome','fantastic','amazing'] },
+          { mood: 'Calm', keywords: [
+            'calm','peaceful','tranquil','composed','relaxed','serene','chill','at ease','mellow','quiet','still','restful','undisturbed','untroubled','placid','laid-back','easygoing','gentle','patient','collected','cool','unworried'] },
+          { mood: 'Neutral', keywords: [
+            'neutral','okay','fine','meh','average','so-so','indifferent','normal','regular','nothing special','unremarkable','standard','moderate','fair','tolerable','passable','middling','unexcited','unmoved'] },
+          { mood: 'Anxious', keywords: [
+            'anxious','nervous','worried','stressed','uneasy','panic','afraid','scared','apprehensive','tense','restless','jittery','fearful','concerned','agitated','troubled','pressured','overwhelmed','insecure','dread','fidgety','on edge','nervousness'] },
+          { mood: 'Sad', keywords: [
+            'sad','down','depressed','unhappy','low','cry','crying','lonely','tired','exhausted','miserable','gloomy','sorrowful','blue','heartbroken','hopeless','upset','discouraged','melancholic','dejected','disheartened','dispirited','grief','mournful','somber','tearful','wretched','lost','empty','hurt','pained'] }
+        ];
+        if (contentInput && moodSuggestion && moodSelect) {
+          contentInput.addEventListener('input', function() {
+            const text = this.value.toLowerCase();
+            let suggestedMood = null;
+            for (const moodObj of moodKeywords) {
+              for (const keyword of moodObj.keywords) {
+                if (text.includes(keyword)) {
+                  suggestedMood = moodObj.mood;
+                  break;
+                }
+              }
+              if (suggestedMood) break;
+            }
+            if (suggestedMood) {
+              moodSuggestion.innerHTML = `<span style="background:#023020;color:#fff;padding:8px 16px;border-radius:16px;cursor:pointer;font-size:1rem;">Suggested mood: <b>${suggestedMood}</b> (click to use)</span>`;
+              moodSuggestion.style.display = '';
+              moodSuggestion.onclick = function() {
+                moodSelect.value = suggestedMood;
+                moodSuggestion.style.display = 'none';
+              };
+            } else {
+              moodSuggestion.style.display = 'none';
+              moodSuggestion.innerHTML = '';
+              moodSuggestion.onclick = null;
+            }
+          });
         }
       }
     </script>
