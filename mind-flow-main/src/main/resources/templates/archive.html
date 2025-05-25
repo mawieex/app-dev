@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Archive - MindFlow</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" th:href="@{/journal.css}">
+</head>
+<body>
+    <div class="container-fluid">
+        <header class="text-center py-4">
+            <h1>Archive</h1>
+            <p class="subtitle">View your archived journal entries here</p>
+        </header>
+        <div class="row">
+            <nav class="col-md-3">
+                <div class="nav-container">
+                    <h4>Menu</h4>
+                    <ul class="nav flex-column">
+                        <li class="nav-item"><a class="nav-link" th:href="@{/journal}">Journaling</a></li>
+                        <li class="nav-item"><a class="nav-link active" th:href="@{/archive}">Archive</a></li>
+                        <li class="nav-item"><a class="nav-link" th:href="@{/insights}">Insights</a></li>
+                        <li class="nav-item"><a class="nav-link" th:href="@{/community}">Community</a></li>
+                        <li class="nav-item"><a class="nav-link" th:href="@{/profile}">Profile</a></li>
+                    </ul>
+                </div>
+            </nav>
+            <main class="col-md-9">
+                <div class="journal-container">
+                    <h2>Your Archived Entries</h2>
+                    <!-- Instant Mood Filter -->
+                    <div class="form-group mb-4" style="max-width: 400px;">
+                        <div class="input-group">
+                            <input type="text" id="moodFilterInput" class="form-control" placeholder="Type a mood, content, or tag to filter">
+                            <div class="input-group-append">
+                                <button class="btn btn-primary" id="moodFilterBtn" type="button">
+                                    <i class="fas fa-search"></i> Search
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End Instant Mood Filter -->
+                    <div id="entriesList">
+                        <div th:each="entry : ${entries}" class="journal-entry">
+                            <div class="timestamp">
+                                <i class="fas fa-clock"></i>
+                                <span th:text="${#temporals.format(entry.timestamp, 'MMMM dd, yyyy HH:mm')}">Timestamp</span>
+                            </div>
+                            <div class="content" th:text="${entry.content}">Content</div>
+                            <div class="mood" th:classappend="'mood-' + ${entry.mood}" th:text="${entry.mood}">Mood</div>
+                            <div class="tags" th:if="${entry.tags != null and !entry.tags.isEmpty()}">
+                                <span th:each="tag : ${entry.tags}" class="tag" th:text="${tag}">Tag</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+</body>
+<script src="/js/archive.js"></script>
+</html> 
