@@ -6,12 +6,78 @@
     <title>MindFlow Insights</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" th:href="@{/insights.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/moment@^2/moment.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@^1/dist/chartjs-adapter-moment.min.js"></script>
+    <style>
+        /* Custom modal styles for green theme */
+        .modal-content {
+            border-radius: 18px;
+            background: var(--lighter-green, #E8F0E6);
+            border: 2px solid var(--primary-green, #A8C3A6);
+        }
+        .modal-header {
+            background: linear-gradient(90deg, var(--primary-green, #A8C3A6), var(--dark-green, #8BA889));
+            color: var(--text-dark, #2C3E50);
+            border-top-left-radius: 16px;
+            border-top-right-radius: 16px;
+            border-bottom: 1px solid var(--light-green, #D1E1D4);
+        }
+        .modal-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+        }
+        .modal-title .fa-info-circle {
+            color: #fff !important;
+            font-size: 1.5rem;
+        }
+        .modal-body {
+            color: var(--text-dark, #2C3E50);
+            font-size: 1.08rem;
+            background: var(--lighter-green, #E8F0E6);
+            border-radius: 0 0 16px 16px;
+        }
+        .modal-footer {
+            background: var(--light-green, #D1E1D4);
+            border-bottom-left-radius: 16px;
+            border-bottom-right-radius: 16px;
+        }
+        .btn-secondary {
+            background-color: var(--primary-green, #A8C3A6);
+            color: var(--text-dark, #2C3E50);
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        .btn-secondary:hover {
+            background-color: var(--dark-green, #8BA889);
+            color: white;
+        }
+        .modal-body ul {
+            padding-left: 1.2em;
+        }
+        .modal-body li {
+            margin-bottom: 0.7em;
+        }
+        .help-icon-btn {
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            padding: 0;
+            margin-left: 8px;
+            outline: none;
+            cursor: pointer;
+        }
+        .help-icon-btn:focus {
+            outline: 2px solid var(--primary-green, #A8C3A6);
+        }
+    </style>
 </head>
 <body>
     <div class="container-fluid">
@@ -39,7 +105,12 @@
                     <div class="insights-content">
                         <!-- Journal Streak Section -->
                         <div class="streak-container">
-                            <h3>Journal Streak</h3>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h3>Journal Streak</h3>
+                                <button type="button" class="help-icon-btn" data-toggle="modal" data-target="#streakHelpModal" title="What is this?">
+                                    <i class="fas fa-question-circle fa-lg"></i>
+                                </button>
+                            </div>
                             <div class="streak-display">
                                 <div class="streak-number" th:text="${currentStreak != null ? currentStreak : 0}">0</div>
                                 <div class="streak-label">Current Streak</div>
@@ -62,6 +133,38 @@
                                     <div class="achievement-label">Completion Rate</div>
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- Help Modal for Journal Streak -->
+                        <div class="modal fade" id="streakHelpModal" tabindex="-1" role="dialog" aria-labelledby="streakHelpModalLabel" aria-hidden="true">
+                          <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                              <div class="modal-header">
+                                <h5 class="modal-title" id="streakHelpModalLabel">
+                                  <i class="fas fa-info-circle"></i>
+                                  Journal Streak Help
+                                </h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                  <span aria-hidden="true">&times;</span>
+                                </button>
+                              </div>
+                              <div class="modal-body">
+                                <strong style="font-size:1.1em;">What is a Journal Streak?</strong>
+                                <ul>
+                                  <li><b>Journal Streak</b>: The number of <span style="color:#388E3C;font-weight:600;">consecutive days</span> you have written at least one journal entry. Your streak increases by 1 for each day you write, and resets if you miss a day.</li>
+                                  <li><b>Longest Streak</b>: The highest number of consecutive days you have ever journaled.</li>
+                                  <li><b>Completion Rate</b>: The percentage of days you have made at least one entry since your first journal entry, up to a maximum of 100%.</li>
+                                </ul>
+                                <div style="background:var(--primary-green,#A8C3A6);color:var(--text-dark,#2C3E50);padding:12px 18px;border-radius:10px;margin-top:1em;font-size:1em;">
+                                  <i class="fas fa-leaf" style="color:#388E3C;margin-right:8px;"></i>
+                                  <b>Tip:</b> Use your streak to motivate yourself to journal regularly and track your consistency over time!
+                                </div>
+                              </div>
+                              <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                              </div>
+                            </div>
+                          </div>
                         </div>
 
                         <!-- Mood Over Time Graph -->
