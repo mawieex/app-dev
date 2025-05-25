@@ -24,6 +24,7 @@
                     <h4>Menu</h4>
                     <ul class="nav flex-column">
                         <li class="nav-item"><a class="nav-link" th:href="@{/journal}">Journaling</a></li>
+                        <li class="nav-item"><a class="nav-link" th:href="@{/archive}">Archive</a></li>
                         <li class="nav-item"><a class="nav-link" th:href="@{/insights}">Insights</a></li>
                         <li class="nav-item"><a class="nav-link" th:href="@{/community}">Community</a></li>
                         <li class="nav-item"><a class="nav-link" th:href="@{/profile}">Profile</a></li>
@@ -55,8 +56,19 @@
                         </div>
                         <div class="form-group">
                             <label for="tags">Tags</label>
-                            <input type="text" class="form-control" id="tags" name="tags" 
-                                   placeholder="Add tags separated by commas (e.g., work, family, goals)">
+                            <select class="form-control" id="tags" name="tags">
+                                <option value="">Select a tag...</option>
+                                <option value="work">Work</option>
+                                <option value="family">Family</option>
+                                <option value="health">Health</option>
+                                <option value="goals">Goals</option>
+                                <option value="reflection">Reflection</option>
+                                <option value="gratitude">Gratitude</option>
+                                <option value="challenges">Challenges</option>
+                                <option value="achievements">Achievements</option>
+                                <option value="ideas">Ideas</option>
+                                <option value="personal">Personal</option>
+                            </select>
                         </div>
                         <button type="submit" class="btn btn-primary">Save Entry</button>
                     </form>
@@ -129,17 +141,48 @@
             });
         }
 
-        const csrfToken = document.querySelector('meta[name=\"_csrf\"]').getAttribute('content');
-        const csrfHeader = document.querySelector('meta[name=\"_csrf_header\"]').getAttribute('content');
+        const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const customTagInput = document.getElementById('customTag');
+            const addCustomTagBtn = document.getElementById('addCustomTag');
+            const tagsSelect = document.getElementById('tags');
 
-        fetch('/api/mood-suggest', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            [csrfHeader]: csrfToken
-          },
-          body: JSON.stringify({ text: entryText })
-        })
+            function addCustomTag() {
+                const customTag = customTagInput.value.trim();
+                if (customTag) {
+                    // Check if tag already exists
+                    const exists = Array.from(tagsSelect.options).some(option => 
+                        option.value.toLowerCase() === customTag.toLowerCase()
+                    );
+                    if (!exists) {
+                        const option = new Option(customTag, customTag);
+                        // Insert as the second option (after 'Select a tag...')
+                        tagsSelect.add(option, 1);
+                        option.selected = true;
+                        customTagInput.value = '';
+                    } else {
+                        // If tag exists, select it
+                        Array.from(tagsSelect.options).forEach(option => {
+                            if (option.value.toLowerCase() === customTag.toLowerCase()) {
+                                option.selected = true;
+                            }
+                        });
+                        customTagInput.value = '';
+                    }
+                }
+            }
+
+            addCustomTagBtn.addEventListener('click', addCustomTag);
+            customTagInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addCustomTag();
+                }
+            });
+        });
     </script>
     <script th:src="@{/js/journal.js}"></script>
 </body>
