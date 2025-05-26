@@ -1,63 +1,81 @@
+// Sync localStorage with the database
+async function syncJournalEntriesFromServer() {
+    try {
+        // Use the new endpoint that returns all entries for the current user
+        const response = await fetch('/api/v1/analytics/journals');
+        if (!response.ok) throw new Error('Failed to fetch journal entries from server');
+        const entries = await response.json();
+        localStorage.setItem('journalEntries', JSON.stringify(entries));
+        if (typeof updateInsightsDisplay === 'function') updateInsightsDisplay();
+        if (typeof initializeCharts === 'function') initializeCharts();
+        if (typeof loadEntries === 'function') loadEntries();
+    } catch (err) {
+        console.error('Error syncing journal entries:', err);
+    }
+}
+
+// Call sync on page load
+window.addEventListener('load', syncJournalEntriesFromServer);
+
+// Function to safely get data from localStorage
+function getLocalStorageData(key, defaultValue = []) {
+    try {
+        const data = localStorage.getItem(key);
+        return data ? JSON.parse(data) : defaultValue;
+    } catch (error) {
+        console.error(`Error reading ${key} from localStorage:`, error);
+        return defaultValue;
+    }
+}
+
 // Function to calculate streak
 function calculateStreak() {
-    const entries = JSON.parse(localStorage.getItem('journalEntries')) || [];
-    if (entries.length === 0) return 0;
+    const entries = getLocalStorageData('journalEntries');
+    if (!entries || entries.length === 0) return 0;
 
+    // Get all unique days with entries (as yyyy-mm-dd)
+    const days = new Set(entries.map(entry => {
+        const d = new Date(entry.timestamp);
+        return d.getFullYear() + '-' + (d.getMonth() + 1).toString().padStart(2, '0') + '-' + d.getDate().toString().padStart(2, '0');
+    }));
+
+    // Start from today, count backwards
     let streak = 0;
-    const today = new Date().setHours(0, 0, 0, 0);
-    const yesterday = new Date(today - 86400000).setHours(0, 0, 0, 0);
-    
-    // Sort entries by date, newest first
-    entries.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    
-    // Check if there's an entry today
-    const lastEntryDate = new Date(entries[0].timestamp).setHours(0, 0, 0, 0);
-    if (lastEntryDate === today) {
-        streak = 1;
-        
-        // Count consecutive previous days
-        let currentDate = yesterday;
-        let i = 1;
-        
-        while (i < entries.length) {
-            const entryDate = new Date(entries[i].timestamp).setHours(0, 0, 0, 0);
-            if (entryDate === currentDate) {
-                streak++;
-                currentDate -= 86400000; // Subtract one day in milliseconds
-                i++;
-            } else if (entryDate < currentDate) {
-                i++;
-            } else {
-                break;
-            }
+    let current = new Date();
+    while (true) {
+        const key = current.getFullYear() + '-' + (current.getMonth() + 1).toString().padStart(2, '0') + '-' + current.getDate().toString().padStart(2, '0');
+        if (days.has(key)) {
+            streak++;
+            current.setDate(current.getDate() - 1);
+        } else {
+            break;
         }
     }
-    
     return streak;
 }
 
 // Function to calculate total entries
 function calculateTotalEntries() {
-    const entries = JSON.parse(localStorage.getItem('journalEntries')) || [];
-    return entries.length;
+    // Get the total entries from the server-rendered value
+    const totalEntriesElement = document.getElementById('totalEntries');
+    if (totalEntriesElement) {
+        return parseInt(totalEntriesElement.textContent) || 0;
+    }
+    return 0;
 }
 
 // Function to calculate longest streak
 function calculateLongestStreak() {
-    const entries = JSON.parse(localStorage.getItem('journalEntries')) || [];
-    if (entries.length === 0) return 0;
-
+    const entries = getLocalStorageData('journalEntries');
+    if (!entries || entries.length === 0) return 0;
+    if (entries.length === 1) return 1;
+    entries.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
     let longestStreak = 0;
     let currentStreak = 1;
-    
-    // Sort entries by date, oldest first
-    entries.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-    
     for (let i = 1; i < entries.length; i++) {
         const currentDate = new Date(entries[i].timestamp).setHours(0, 0, 0, 0);
         const previousDate = new Date(entries[i-1].timestamp).setHours(0, 0, 0, 0);
         const dayDifference = (currentDate - previousDate) / (1000 * 60 * 60 * 24);
-        
         if (dayDifference === 1) {
             currentStreak++;
         } else if (dayDifference > 1) {
@@ -65,284 +83,122 @@ function calculateLongestStreak() {
             currentStreak = 1;
         }
     }
-    
     return Math.max(longestStreak, currentStreak);
 }
 
 // Function to calculate completion rate
 function calculateCompletionRate() {
-    const entries = JSON.parse(localStorage.getItem('journalEntries')) || [];
+    const entries = getLocalStorageData('journalEntries');
+    if (!entries || entries.length === 0) return 0;
+    entries.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
     if (entries.length === 0) return 0;
-    
     const uniqueDays = new Set();
     entries.forEach(entry => {
-        const date = new Date(entry.timestamp).setHours(0, 0, 0, 0);
+        const date = new Date(entry.timestamp).toLocaleDateString();
         uniqueDays.add(date);
     });
-    
-    const daysSinceFirstEntry = Math.ceil((new Date() - new Date(entries[0].timestamp)) / (1000 * 60 * 60 * 24));
+    const daysSinceFirstEntry = Math.max(1, Math.ceil((new Date() - new Date(entries[0].timestamp)) / (1000 * 60 * 60 * 24)));
     return Math.round((uniqueDays.size / daysSinceFirstEntry) * 100);
 }
 
 // Function to update insights display
 function updateInsightsDisplay() {
-    const currentStreak = calculateStreak();
-    const totalEntries = calculateTotalEntries();
-    const longestStreak = calculateLongestStreak();
-    const completionRate = calculateCompletionRate();
-    
-    document.getElementById('currentStreak').textContent = currentStreak;
-    document.getElementById('totalEntries').textContent = totalEntries;
-    document.getElementById('longestStreak').textContent = longestStreak;
-    document.getElementById('completionRate').textContent = completionRate + '%';
-    
-    // Update streak progress bar
-    const streakProgress = document.getElementById('streakProgress');
-    streakProgress.style.width = (currentStreak / Math.max(longestStreak, 1)) * 100 + '%';
+    try {
+        const currentStreak = calculateStreak();
+        const totalEntries = calculateTotalEntries();
+        const longestStreak = calculateLongestStreak();
+        const completionRate = calculateCompletionRate();
+        
+        // Update DOM elements if they exist
+        const elements = {
+            'currentStreak': currentStreak,
+            'totalEntries': totalEntries,
+            'longestStreak': longestStreak,
+            'completionRate': completionRate + '%'
+        };
+        
+        Object.entries(elements).forEach(([id, value]) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = value;
+            }
+        });
+        
+        // Update streak progress bar
+        const streakProgress = document.getElementById('streakProgress');
+        if (streakProgress) {
+            streakProgress.style.width = (currentStreak / Math.max(longestStreak, 1)) * 100 + '%';
+        }
+    } catch (error) {
+        console.error('Error updating insights display:', error);
+    }
+}
+
+// Map any mood string to Positive, Neutral, or Negative
+function mapMoodToSentiment(mood) {
+    const positive = ['happy', 'joyful', 'excited', 'relaxed', 'grateful', 'content', 'proud', 'motivated', 'calm', 'optimistic', 'satisfied', 'hopeful', 'energetic', 'loved', 'peaceful'];
+    const negative = ['sad', 'angry', 'stressed', 'anxious', 'tired', 'depressed', 'worried', 'frustrated', 'upset', 'lonely', 'afraid', 'guilty', 'ashamed', 'bored', 'disappointed', 'overwhelmed'];
+    const neutral = ['neutral', 'okay', 'meh', 'fine', 'indifferent', 'average', 'so-so'];
+    if (!mood) return 'Neutral';
+    const m = mood.trim().toLowerCase();
+    if (positive.includes(m)) return 'Positive';
+    if (negative.includes(m)) return 'Negative';
+    if (neutral.includes(m)) return 'Neutral';
+    // Default: treat unknown moods as Neutral
+    return 'Neutral';
+}
+
+function getMoodValue(mood) {
+    // Use sentiment mapping
+    const sentiment = mapMoodToSentiment(mood);
+    const moodValues = {
+        'Positive': 3,
+        'Neutral': 2,
+        'Negative': 1
+    };
+    return moodValues[sentiment] || 2; // Default to neutral if mood not found
 }
 
 // Function to prepare mood data for chart
 function prepareMoodData() {
-    console.log('Preparing mood data...');
-    const entries = JSON.parse(localStorage.getItem('journalEntries')) || [];
-    console.log('Journal entries:', entries);
-    
-    if (entries.length === 0) {
-        console.log('No journal entries found');
-        const canvas = document.getElementById('moodChart');
-        if (canvas) {
-            canvas.innerHTML = '<div class="alert alert-info">No journal entries found. Start journaling to see your mood trends!</div>';
-        }
-        return { labels: [], data: [] };
-    }
-
-    // Sort entries by date
+    const entries = getLocalStorageData('journalEntries');
+    if (!entries || entries.length === 0) return { labels: [], data: [] };
     entries.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-
-    // Create a map to store average mood per day
+    if (entries.length === 0) return { labels: [], data: [] };
     const moodMap = new Map();
-    
     entries.forEach(entry => {
         const date = new Date(entry.timestamp).toLocaleDateString();
-        const moodValue = getMoodValue(entry.mood);
-        console.log(`Processing entry - Date: ${date}, Mood: ${entry.mood}, Value: ${moodValue}`);
-        
+        const moodValue = getMoodValue(entry.mood); // Now uses sentiment mapping
         if (!moodMap.has(date)) {
             moodMap.set(date, { sum: moodValue, count: 1 });
         } else {
             const current = moodMap.get(date);
-            moodMap.set(date, { 
-                sum: current.sum + moodValue, 
-                count: current.count + 1 
-            });
+            moodMap.set(date, { sum: current.sum + moodValue, count: current.count + 1 });
         }
     });
-
-    // Convert map to arrays for chart
     const labels = Array.from(moodMap.keys());
-    const data = Array.from(moodMap.values()).map(day => 
-        Math.round((day.sum / day.count) * 10) / 10
-    );
-
-    console.log('Prepared chart data:', { labels, data });
+    const data = Array.from(moodMap.values()).map(day => Math.round((day.sum / day.count) * 10) / 10);
     return { labels, data };
-}
-
-// Function to convert mood text to numerical value
-function getMoodValue(mood) {
-    const moodValues = {
-        'Happy': 5,
-        'Calm': 4,
-        'Neutral': 3,
-        'Anxious': 2,
-        'Sad': 1
-    };
-    return moodValues[mood] || 3; // Default to neutral if mood not found
-}
-
-// Function to update mood chart
-function updateMoodChart() {
-    console.log('Updating mood chart...');
-    
-    const { labels, data } = prepareMoodData();
-    console.log('Chart data:', { labels, data });
-    
-    // If no data, don't try to create chart
-    if (labels.length === 0 || data.length === 0) {
-        console.log('No data to display in chart');
-        return;
-    }
-    
-    // Destroy existing chart if it exists
-    if (window.moodChart && typeof window.moodChart.destroy === 'function') {
-        console.log('Destroying existing chart');
-        window.moodChart.destroy();
-        window.moodChart = null;
-    }
-
-    const canvas = document.getElementById('moodChart');
-    if (!canvas) {
-        console.error('Mood chart canvas not found');
-        return;
-    }
-    console.log('Found canvas element');
-
-    // Set canvas size
-    canvas.style.width = '100%';
-    canvas.style.height = '100%';
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-        console.error('Could not get canvas context');
-        return;
-    }
-    console.log('Got canvas context');
-
-    try {
-        console.log('Creating new chart...');
-        // Create new chart instance
-        const chartConfig = {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Mood Over Time',
-                    data: data,
-                    borderColor: '#4CAF50',
-                    backgroundColor: 'rgba(76, 175, 80, 0.1)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                layout: {
-                    padding: {
-                        left: 10,
-                        right: 10,
-                        top: 10,
-                        bottom: 10
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 5,
-                        ticks: {
-                            stepSize: 1,
-                            callback: function(value) {
-                                const moodLabels = {
-                                    1: 'Sad',
-                                    2: 'Anxious',
-                                    3: 'Neutral',
-                                    4: 'Calm',
-                                    5: 'Happy'
-                                };
-                                return moodLabels[value] || value;
-                            }
-                        }
-                    },
-                    x: {
-                        ticks: {
-                            maxRotation: 45,
-                            minRotation: 45
-                        }
-                    }
-                },
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return `Mood: ${context.raw}`;
-                            }
-                        }
-                    }
-                }
-            }
-        };
-
-        // Create the chart and store it in window.moodChart
-        window.moodChart = new Chart(ctx, chartConfig);
-        console.log('Chart created successfully');
-    } catch (error) {
-        console.error('Error creating chart:', error);
-        // Show error message in canvas
-        canvas.innerHTML = '<div class="alert alert-danger">Error creating chart. Please try refreshing the page.</div>';
-        // Clear the error state
-        window.moodChart = null;
-    }
 }
 
 // Function to prepare monthly emotions data
 function prepareMonthlyEmotionsData() {
-    console.log('Preparing monthly emotions data...');
-    const entries = JSON.parse(localStorage.getItem('journalEntries')) || [];
-    console.log('Total entries:', entries.length);
-    
-    if (entries.length === 0) {
-        console.log('No journal entries found for emotions chart');
-        return { labels: [], data: [] };
-    }
-
-    // Get current month's entries
-    const currentMonth = new Date().getMonth();
-    const currentYear = new Date().getFullYear();
-    console.log('Current month:', currentMonth, 'Current year:', currentYear);
-    
-    const monthlyEntries = entries.filter(entry => {
-        const entryDate = new Date(entry.timestamp);
-        return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
-    });
-    console.log('Monthly entries:', monthlyEntries.length);
-
-    // Count emotions
-    const emotionCounts = {
-        'Happy': 0,
-        'Calm': 0,
-        'Neutral': 0,
-        'Anxious': 0,
-        'Sad': 0
-    };
-
-    monthlyEntries.forEach(entry => {
-        console.log('Processing entry:', entry);
-        if (emotionCounts.hasOwnProperty(entry.mood)) {
-            emotionCounts[entry.mood]++;
+    const entries = getLocalStorageData('journalEntries');
+    if (!entries || entries.length === 0) return { labels: [], data: [] };
+    const emotionCounts = { 'Positive': 0, 'Neutral': 0, 'Negative': 0 };
+    entries.forEach(entry => {
+        const sentiment = mapMoodToSentiment(entry.mood);
+        if (emotionCounts.hasOwnProperty(sentiment)) {
+            emotionCounts[sentiment]++;
         }
     });
-
-    console.log('Emotion counts:', emotionCounts);
-    return {
-        labels: Object.keys(emotionCounts),
-        data: Object.values(emotionCounts)
-    };
+    return { labels: Object.keys(emotionCounts), data: Object.values(emotionCounts) };
 }
 
 // Function to prepare activity patterns data
 function prepareActivityPatternsData() {
-    console.log('Preparing activity patterns data...');
-    const entries = JSON.parse(localStorage.getItem('journalEntries')) || [];
-    console.log('Total entries:', entries.length);
-    
-    if (entries.length === 0) {
-        console.log('No journal entries found for activity patterns chart');
-        return { labels: [], data: [] };
-    }
-
-    // Get current month's entries
-    const currentMonth = new Date().getMonth();
-    const currentYear = new Date().getFullYear();
-    console.log('Current month:', currentMonth, 'Current year:', currentYear);
-    
-    const monthlyEntries = entries.filter(entry => {
-        const entryDate = new Date(entry.timestamp);
-        return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
-    });
-    console.log('Monthly entries:', monthlyEntries.length);
-
-    // Count entries by day of week
+    const entries = getLocalStorageData('journalEntries');
+    if (!entries || entries.length === 0) return { labels: [], data: [] };
     const dayCounts = {
         'Sunday': 0,
         'Monday': 0,
@@ -352,40 +208,88 @@ function prepareActivityPatternsData() {
         'Friday': 0,
         'Saturday': 0
     };
-
-    monthlyEntries.forEach(entry => {
+    // Use all entries, not just current month
+    entries.forEach(entry => {
         const day = new Date(entry.timestamp).toLocaleDateString('en-US', { weekday: 'long' });
-        console.log('Entry day:', day);
         dayCounts[day]++;
     });
-
-    console.log('Day counts:', dayCounts);
-    return {
-        labels: Object.keys(dayCounts),
-        data: Object.values(dayCounts)
-    };
+    return { labels: Object.keys(dayCounts), data: Object.values(dayCounts) };
 }
 
-// Function to update monthly trends charts
-function updateMonthlyTrendsCharts() {
-    console.log('Updating monthly trends charts...');
-    
-    // Update Emotions Chart
-    const emotionsData = prepareMonthlyEmotionsData();
-    console.log('Emotions data:', emotionsData);
-    
-    const emotionsCtx = document.getElementById('emotionsChart');
-    console.log('Emotions canvas context:', emotionsCtx);
-    
-    if (emotionsCtx) {
-        // Destroy existing chart if it exists and is a valid Chart instance
-        if (window.emotionsChart && typeof window.emotionsChart.destroy === 'function') {
-            console.log('Destroying existing emotions chart');
-            window.emotionsChart.destroy();
+// Function to show/hide chart and message
+function showChartOrMessage(canvasId, messageId, hasData, message) {
+    const canvas = document.getElementById(canvasId);
+    const msg = document.getElementById(messageId);
+    if (canvas) canvas.style.display = hasData ? '' : 'none';
+    if (msg) {
+        msg.style.display = hasData ? 'none' : '';
+        msg.textContent = hasData ? '' : message;
+    }
+}
+
+// Function to initialize charts
+function initializeCharts() {
+    try {
+        // Mood chart
+        const moodData = prepareMoodData();
+        showChartOrMessage('moodChart', 'moodChartMsg', moodData.labels.length > 0, 'No journal entries found. Start journaling to see your mood trends!');
+        if (moodData.labels.length > 0) {
+            const moodCtx = document.getElementById('moodChart').getContext('2d');
+            if (window.moodChart && typeof window.moodChart.destroy === 'function') window.moodChart.destroy();
+            window.moodChart = new Chart(moodCtx, {
+                type: 'line',
+                data: {
+                    labels: moodData.labels,
+                    datasets: [{
+                        label: 'Mood',
+                        data: moodData.data,
+                        borderColor: '#A8C3A6',
+                        backgroundColor: 'rgba(168, 195, 166, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 3,
+                            ticks: {
+                                stepSize: 1,
+                                callback: function(value) {
+                                    const moods = ['Negative', 'Neutral', 'Positive'];
+                                    return moods[value - 1] || '';
+                                }
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const moods = ['Negative', 'Neutral', 'Positive'];
+                                    return `Mood: ${moods[context.raw - 1] || context.raw}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
         }
-        
-        try {
-            console.log('Creating new emotions chart...');
+        // Emotions chart
+        const emotionsData = prepareMonthlyEmotionsData();
+        showChartOrMessage('emotionsChart', 'emotionsChartMsg', emotionsData.labels.some((l, i) => emotionsData.data[i] > 0), 'No emotion data available.');
+        if (emotionsData.labels.some((l, i) => emotionsData.data[i] > 0)) {
+            const emotionsCtx = document.getElementById('emotionsChart').getContext('2d');
+            if (window.emotionsChart && typeof window.emotionsChart.destroy === 'function') window.emotionsChart.destroy();
             window.emotionsChart = new Chart(emotionsCtx, {
                 type: 'doughnut',
                 data: {
@@ -393,11 +297,9 @@ function updateMonthlyTrendsCharts() {
                     datasets: [{
                         data: emotionsData.data,
                         backgroundColor: [
-                            '#4CAF50', // Happy - Green
-                            '#2196F3', // Calm - Blue
+                            '#4CAF50', // Positive - Green
                             '#9E9E9E', // Neutral - Grey
-                            '#FFC107', // Anxious - Yellow
-                            '#F44336'  // Sad - Red
+                            '#F44336'  // Negative - Red
                         ]
                     }]
                 },
@@ -407,45 +309,26 @@ function updateMonthlyTrendsCharts() {
                     plugins: {
                         legend: {
                             position: 'bottom'
-                        },
-                        title: {
-                            display: true,
-                            text: 'Emotional Distribution'
                         }
                     }
                 }
             });
-            console.log('Emotions chart created successfully');
-        } catch (error) {
-            console.error('Error creating emotions chart:', error);
         }
-    }
-
-    // Update Activity Patterns Chart
-    const activityData = prepareActivityPatternsData();
-    console.log('Activity data:', activityData);
-    
-    const activityCtx = document.getElementById('activitiesChart');
-    console.log('Activity canvas context:', activityCtx);
-    
-    if (activityCtx) {
-        // Destroy existing chart if it exists and is a valid Chart instance
-        if (window.activityChart && typeof window.activityChart.destroy === 'function') {
-            console.log('Destroying existing activity chart');
-            window.activityChart.destroy();
-        }
-        
-        try {
-            console.log('Creating new activity chart...');
-            window.activityChart = new Chart(activityCtx, {
+        // Activity patterns chart
+        const activityData = prepareActivityPatternsData();
+        showChartOrMessage('activitiesChart', 'activitiesChartMsg', activityData.labels.some((l, i) => activityData.data[i] > 0), 'No activity data available.');
+        if (activityData.labels.some((l, i) => activityData.data[i] > 0)) {
+            const activitiesCtx = document.getElementById('activitiesChart').getContext('2d');
+            if (window.activityChart && typeof window.activityChart.destroy === 'function') window.activityChart.destroy();
+            window.activityChart = new Chart(activitiesCtx, {
                 type: 'bar',
                 data: {
                     labels: activityData.labels,
                     datasets: [{
                         label: 'Journal Entries',
                         data: activityData.data,
-                        backgroundColor: '#4CAF50',
-                        borderColor: '#388E3C',
+                        backgroundColor: '#A8C3A6',
+                        borderColor: '#8BA889',
                         borderWidth: 1
                     }]
                 },
@@ -463,18 +346,13 @@ function updateMonthlyTrendsCharts() {
                     plugins: {
                         legend: {
                             display: false
-                        },
-                        title: {
-                            display: true,
-                            text: 'Entries by Day of Week'
                         }
                     }
                 }
             });
-            console.log('Activity chart created successfully');
-        } catch (error) {
-            console.error('Error creating activity chart:', error);
         }
+    } catch (error) {
+        console.error('Error initializing charts:', error);
     }
 }
 
@@ -513,11 +391,8 @@ document.addEventListener("DOMContentLoaded", function () {
     // Update insights display
     updateInsightsDisplay();
     
-    // Update mood chart
-    updateMoodChart();
-    
-    // Update monthly trends charts
-    updateMonthlyTrendsCharts();
+    // Initialize charts
+    initializeCharts();
     
     // Log chart status
     console.log('Charts initialized:', {
@@ -527,12 +402,12 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 
-// Update the storage event listener to include monthly trends
+// Update the storage event listener
 window.addEventListener('storage', function(e) {
     if (e.key === 'journalEntries') {
         console.log('Journal entries updated, refreshing charts...');
-        updateMoodChart();
-        updateMonthlyTrendsCharts();
+        updateInsightsDisplay();
+        initializeCharts();
     }
 });
 

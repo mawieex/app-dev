@@ -8,9 +8,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 
 import java.util.List;
 
@@ -24,8 +21,7 @@ public class ArchiveController {
         if (currentUser == null) {
             return "redirect:/user/login";
         }
-        Pageable pageable = PageRequest.of(0, 50, Sort.by("timestamp").descending());
-        List<JournalEntry> entries = journalEntryRepository.findByUserOrderByTimestampDesc(currentUser, pageable);
+        List<JournalEntry> entries = journalEntryRepository.findByUserOrderByTimestampDesc(currentUser, org.springframework.data.domain.Pageable.unpaged());
         model.addAttribute("entries", entries);
         model.addAttribute("currentUser", currentUser);
         return "archive";

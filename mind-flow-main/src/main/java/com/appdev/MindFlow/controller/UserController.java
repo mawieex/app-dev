@@ -449,14 +449,40 @@ public class UserController {
                 currentUser, startOfMonth, endOfMonth);
 
             // Calculate insights using database queries
-            int totalEntries = journalEntryRepository.countByUser(currentUser);
+            List<JournalEntry> allEntries = journalEntryRepository.findByUserOrderByTimestampDesc(currentUser, org.springframework.data.domain.Pageable.unpaged());
+            System.out.println("All entries for user:");
+            for (JournalEntry entry : allEntries) {
+                System.out.println("Entry ID: " + entry.getId() + ", Timestamp: " + entry.getTimestamp());
+            }
+            System.out.println("Total entries counted: " + allEntries.size());
+            int totalEntries = allEntries.size();
             int currentStreak = calculateCurrentStreak(recentEntries);
             int longestStreak = calculateLongestStreak(recentEntries);
             int completionRate = calculateCompletionRate(recentEntries);
             
             // Prepare data for charts
             Map<String, Long> moodDistribution = monthlyEntries.stream()
-                .collect(Collectors.groupingBy(JournalEntry::getMood, Collectors.counting()));
+                .map(entry -> {
+                    // Convert old mood values to new categories
+                    String newMood;
+                    switch (entry.getMood()) {
+                        case "Happy":
+                        case "Calm":
+                            newMood = "Positive";
+                            break;
+                        case "Neutral":
+                            newMood = "Neutral";
+                            break;
+                        case "Anxious":
+                        case "Sad":
+                            newMood = "Negative";
+                            break;
+                        default:
+                            newMood = "Neutral";
+                    }
+                    return newMood;
+                })
+                .collect(Collectors.groupingBy(mood -> mood, Collectors.counting()));
             
             Map<String, Long> activityPatterns = monthlyEntries.stream()
                 .collect(Collectors.groupingBy(entry -> entry.getTimestamp().getDayOfWeek().toString(), Collectors.counting()));

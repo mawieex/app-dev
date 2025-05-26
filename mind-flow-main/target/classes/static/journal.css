@@ -258,13 +258,8 @@ main {
 }
 
 /* Mood-specific colors */
-.mood-Happy {
+.mood-Positive {
     background-color: #4CAF50 !important;
-    color: white !important;
-}
-
-.mood-Calm {
-    background-color: #2196F3 !important;
     color: white !important;
 }
 
@@ -273,12 +268,7 @@ main {
     color: white !important;
 }
 
-.mood-Anxious {
-    background-color: #FFC107 !important;
-    color: #333 !important;
-}
-
-.mood-Sad {
+.mood-Negative {
     background-color: #F44336 !important;
     color: white !important;
 }

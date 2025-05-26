@@ -33,4 +33,8 @@ public class JournalEntryService {
     public JournalEntry saveJournalEntry(JournalEntry journalEntry) {
         return journalEntryRepository.save(journalEntry);
     }
+
+    public List<JournalEntry> findByUser(com.appdev.MindFlow.model.User user) {
+        return journalEntryRepository.findByUserOrderByTimestampDesc(user, org.springframework.data.domain.Pageable.unpaged());
+    }
 } 

@@ -5,6 +5,8 @@ import com.appdev.MindFlow.service.JournalEntryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import com.appdev.MindFlow.model.User;
 
 import java.util.List;
 
@@ -43,6 +45,15 @@ public class JournalEntryController {
         if (entries.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
+        return ResponseEntity.ok(entries);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<JournalEntry>> getAllJournalsForCurrentUser(@AuthenticationPrincipal User currentUser) {
+        if (currentUser == null) {
+            return ResponseEntity.status(401).build();
+        }
+        List<JournalEntry> entries = journalEntryService.findByUser(currentUser);
         return ResponseEntity.ok(entries);
     }
 

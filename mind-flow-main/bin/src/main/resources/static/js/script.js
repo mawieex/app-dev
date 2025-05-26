@@ -31,7 +31,10 @@ document.addEventListener("DOMContentLoaded", function () {
             entries.splice(index, 1); // Remove the entry at the specified index
             // Update local storage
             localStorage.setItem('journalEntries', JSON.stringify(entries));
+            if (typeof updateInsightsDisplay === 'function') updateInsightsDisplay();
+            if (typeof initializeCharts === 'function') initializeCharts();
             loadEntries(); // Refresh the displayed entries
+            syncJournalEntriesFromServer();
         }
 
         // Load entries when the page loads
@@ -63,6 +66,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
             // Save the updated entries back to local storage
             localStorage.setItem('journalEntries', JSON.stringify(entries));
+            if (typeof updateInsightsDisplay === 'function') updateInsightsDisplay();
+            if (typeof initializeCharts === 'function') initializeCharts();
 
             // Clear the form fields
             document.getElementById('journalEntry').value = '';
@@ -71,6 +76,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             // Reload the entries to display the new one
             loadEntries();
+            syncJournalEntriesFromServer();
         });
         document.addEventListener("DOMContentLoaded", function () {
             fetch("/user/session")
@@ -132,3 +138,23 @@ document.getElementById("loginForm").addEventListener("submit", function (event)
 //profile
 //register
 //security
+
+// Sync localStorage with the database
+async function syncJournalEntriesFromServer() {
+    try {
+        // Use the new endpoint that returns all entries for the current user
+        const response = await fetch('/api/v1/analytics/journals');
+        if (!response.ok) throw new Error('Failed to fetch journal entries from server');
+        const entries = await response.json();
+        localStorage.setItem('journalEntries', JSON.stringify(entries));
+        if (typeof updateInsightsDisplay === 'function') updateInsightsDisplay();
+        if (typeof initializeCharts === 'function') initializeCharts();
+        if (typeof loadEntries === 'function') loadEntries();
+    } catch (err) {
+        console.error('Error syncing journal entries:', err);
+    }
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+    syncJournalEntriesFromServer();
+});

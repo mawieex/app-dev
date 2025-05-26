@@ -148,5 +148,60 @@
         });
     </script>
     <script th:src="@{/js/journal.js}"></script>
+    <script>
+        // Migration script: Map old moods to new categories in localStorage
+        (function migrateMoods() {
+            const moodMap = {
+                'Happy': 'Positive',
+                'Calm': 'Positive',
+                'Neutral': 'Neutral',
+                'Anxious': 'Negative',
+                'Sad': 'Negative'
+            };
+            let entries = JSON.parse(localStorage.getItem('journalEntries')) || [];
+            let changed = false;
+            entries = entries.map(entry => {
+                if (moodMap[entry.mood]) {
+                    if (entry.mood !== moodMap[entry.mood]) changed = true;
+                    entry.mood = moodMap[entry.mood];
+                }
+                return entry;
+            });
+            if (changed) {
+                localStorage.setItem('journalEntries', JSON.stringify(entries));
+                alert('Mood migration complete! Please refresh the page.');
+            } else {
+                alert('No migration needed. All moods are up to date.');
+            }
+        })();
+    </script>
+    <script>
+        function calculateCurrentStreak() {
+            const entries = getLocalStorageData('journalEntries');
+            if (!entries || entries.length === 0) return 0;
+
+            // Get all unique days with entries (as yyyy-mm-dd)
+            const days = new Set(entries.map(entry => {
+                const d = new Date(entry.timestamp);
+                // Normalize to yyyy-mm-dd
+                return d.getFullYear() + '-' + (d.getMonth() + 1).toString().padStart(2, '0') + '-' + d.getDate().toString().padStart(2, '0');
+            }));
+
+            // Start from today, count backwards
+            let streak = 0;
+            let current = new Date();
+            while (true) {
+                const key = current.getFullYear() + '-' + (current.getMonth() + 1).toString().padStart(2, '0') + '-' + current.getDate().toString().padStart(2, '0');
+                if (days.has(key)) {
+                    streak++;
+                    // Go to previous day
+                    current.setDate(current.getDate() - 1);
+                } else {
+                    break;
+                }
+            }
+            return streak;
+        }
+    </script>
 </body>
 </html>
